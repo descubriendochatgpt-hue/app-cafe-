@@ -65,7 +65,7 @@ Con el CLI de Supabase, `supabase db push` aplica las mismas migraciones.
 
 ```bash
 npm run typecheck     # TypeScript
-npm test              # 18 pruebas de la capa de aplicación
+npm test              # 113 pruebas de la capa de aplicación
 npm run db:test       # criterios de aceptación contra Postgres
 ```
 
