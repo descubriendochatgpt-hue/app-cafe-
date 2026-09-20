@@ -117,3 +117,53 @@ llama con el JWT de la persona y no con la clave de servicio.
 
 La clave de servicio se reserva a los conectores automáticos, donde no hay
 nadie detrás.
+
+## Preparar toca el libro; empaquetar no
+
+Preparar un pedido saca el café del estante y **sí** descuenta inventario.
+Meterlo en cajas **no** toca nada: el bulto solo dice en qué caja va lo que
+ya salió, con su peso para la agencia.
+
+La tentación es descontar al cerrar el bulto, que es cuando «sale por la
+puerta». Sería contar la salida dos veces, porque preparar ya la contó. Un
+pedido preparado y sin empaquetar es mercancía comprometida y fuera del
+estante; el bulto es logística, no inventario.
+
+## El panel se calcula, no se guarda
+
+Ninguna cifra del panel está almacenada. Todo se deriva del libro de
+movimientos y de los pedidos en el momento de preguntar.
+
+Un panel con cifras guardadas se desincroniza: alguien corrige un pedido de
+hace tres días y el resumen sigue diciendo lo de antes. Calcularlo cada vez
+cuesta una consulta y garantiza que el panel **no pueda** contradecir al
+stock, porque son el mismo dato mirado desde dos sitios. Hay una prueba que
+lo comprueba: la serie por día suma lo mismo que el total, y el stock del
+panel es el mismo que el de los saldos.
+
+El periodo se cierra **hoy** por arriba. Hay pedidos con fecha futura —un
+albarán de El Corte Inglés se firma con la fecha de entrega—, y «lo vendido
+en 30 días» no puede incluir lo que todavía no ha pasado.
+
+## Los importes los quita la base, no la pantalla
+
+`panel()` y `resumen_diario()` son SECURITY DEFINER, así que comprueban el
+perfil ellas mismas y devuelven los campos de dinero a `null` para quien no
+llega a GESTOR. La pantalla no oculta nada: **no le llega**.
+
+Ocultarlo en la interfaz sería suficiente para que nadie lo viera por
+accidente, y completamente insuficiente para cualquiera que abra la pestaña
+de red del navegador.
+
+## El aviso diario se reserva antes de mandarse
+
+La fecha es clave primaria en `avisos_enviados`, y la fila se inserta
+**antes** de llamar al proveedor de correo. Apuntarlo después dejaría que
+dos crones solapados pasaran los dos por la comprobación y salieran dos
+correos iguales.
+
+El precio de hacerlo así es que un fallo del proveedor deja el día marcado
+sin correo. Por eso existe `soltar_aviso_diario`: el envío fallido deshace
+la reserva y el siguiente intento vuelve a poder mandarlo. Se prefiere
+arriesgar un correo tarde a arriesgar un correo duplicado, porque el
+duplicado es el que hace que se dejen de leer.

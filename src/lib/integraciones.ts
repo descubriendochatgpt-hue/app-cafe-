@@ -24,7 +24,7 @@ export interface Ranura {
 }
 
 export interface Integracion {
-  id: 'supabase' | 'loyverse' | 'woocommerce' | 'eci' | 'whatsapp';
+  id: 'supabase' | 'loyverse' | 'woocommerce' | 'eci' | 'whatsapp' | 'avisos';
   nombre: string;
   descripcion: string;
   estado: EstadoIntegracion;
@@ -125,6 +125,15 @@ export function inventario(): Integracion[] {
     ranura('WOOCOMMERCE_UBICACION', false, 'Ubicación cuyo stock se publica en la web'),
   ];
 
+  const av = [
+    ranura('RESEND_API_KEY', true,
+      'resend.com → API Keys → Create. Con el plan gratuito sobra: es un correo al día'),
+    ranura('AVISOS_PARA', true,
+      'A quién le llega, separado por comas. Normalmente solo a quien lleva el obrador'),
+    ranura('AVISOS_DE', false,
+      'Remitente. Tiene que ser de un dominio verificado en Resend, si no lo rechaza'),
+  ];
+
   const estadoLv = estadoDe(lv);
   const estadoWc = estadoDe(wc);
 
@@ -180,13 +189,28 @@ export function inventario(): Integracion[] {
       siguientePaso: 'Manual: traslados para servir y devolver, y carga del informe mensual.',
     },
     {
+      id: 'avisos',
+      nombre: 'Aviso diario por correo',
+      descripcion: 'Un correo al amanecer con lo de ayer y lo que hay que mirar hoy.',
+      estado: estadoDe(av),
+      ranuras: av,
+      webhooks: [{
+        evento: 'Diario, 7:00',
+        url: `${base}/api/cron/avisos`,
+        nota: 'Lo dispara Vercel solo. Abriendo la dirección a mano se reenvía el del día, '
+            + 'y con ?fecha=2026-09-15 el de un día concreto.',
+      }],
+      siguientePaso: describir(av, estadoDe(av),
+        'Configurado. Sale una vez al día; el segundo intento del mismo día no manda nada.'),
+    },
+    {
       id: 'whatsapp',
       nombre: 'Hostelería por WhatsApp',
-      descripcion: 'Fase 5. Con la opción recomendada no hacen falta claves.',
-      estado: 'sin_configurar',
+      descripcion: 'Pedidos por formulario propio, con enlace por WhatsApp. Sin claves.',
+      estado: 'lista',
       ranuras: [],
       webhooks: [],
-      siguientePaso: 'Pendiente de fase.',
+      siguientePaso: 'Listo. Los enlaces por cliente se generan en Ajustes → Clientes.',
     },
   ];
 }

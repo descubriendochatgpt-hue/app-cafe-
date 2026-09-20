@@ -9,10 +9,11 @@
  */
 import { useState } from 'react';
 import Link from 'next/link';
-import { Editor, type Fila } from '@/componentes/Editor';
+import { Editor } from '@/componentes/Editor';
 import { EanDeArticulo } from '@/componentes/Ean';
+import { Capacidad } from '@/componentes/Capacidad';
 
-type Pestana = 'cafes' | 'formatos' | 'articulos' | 'precios' | 'ubicaciones';
+type Pestana = 'cafes' | 'formatos' | 'articulos' | 'precios' | 'ubicaciones' | 'cajas';
 
 const PESTANAS: { id: Pestana; texto: string }[] = [
   { id: 'cafes', texto: 'Cafés' },
@@ -20,6 +21,7 @@ const PESTANAS: { id: Pestana; texto: string }[] = [
   { id: 'articulos', texto: 'Referencias' },
   { id: 'precios', texto: 'Precios' },
   { id: 'ubicaciones', texto: 'Ubicaciones' },
+  { id: 'cajas', texto: 'Cajas' },
 ];
 
 export default function Catalogo() {
@@ -204,6 +206,38 @@ export default function Catalogo() {
               </div>
             </>
           )}
+        />
+      )}
+
+      {pestana === 'cajas' && (
+        <Editor
+          recurso="cajas" clave="caja_id"
+          titulo="Cajas" vacia={{ activo: true, peso_vacio_g: 0 }}
+          descripcion="Los tamaños que se usan para enviar. El peso en vacío evita tener que pesar cada bulto."
+          campos={[
+            { nombre: 'caja_id', etiqueta: 'Código', tipo: 'texto', requerido: true, soloAlta: true },
+            { nombre: 'nombre', etiqueta: 'Nombre', tipo: 'texto', requerido: true },
+            { nombre: 'largo_cm', etiqueta: 'Largo (cm)', tipo: 'numero', requerido: true, paso: '0.1' },
+            { nombre: 'ancho_cm', etiqueta: 'Ancho (cm)', tipo: 'numero', requerido: true, paso: '0.1' },
+            { nombre: 'alto_cm', etiqueta: 'Alto (cm)', tipo: 'numero', requerido: true, paso: '0.1' },
+            { nombre: 'peso_vacio_g', etiqueta: 'Peso en vacío (g)', tipo: 'numero', requerido: true, paso: '1' },
+            { nombre: 'activo', etiqueta: 'Activa', tipo: 'siNo' },
+          ]}
+          resumen={(f) => (
+            <>
+              <div className="fila">
+                <strong>{String(f.nombre)}</strong>
+                <span className="suave">
+                  {String(f.largo_cm)} × {String(f.ancho_cm)} × {String(f.alto_cm)} cm
+                </span>
+              </div>
+              <div className="fila">
+                <span className="mono suave">{String(f.caja_id)}</span>
+                <span className="suave">vacía {String(f.peso_vacio_g)} g</span>
+              </div>
+            </>
+          )}
+          extra={(f) => <Capacidad cajaId={String(f.caja_id)} />}
         />
       )}
 

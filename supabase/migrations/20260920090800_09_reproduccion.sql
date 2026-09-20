@@ -14,8 +14,8 @@
 --  para las devoluciones, que buscan los lotes de la venta que devuelven:
 --  al reproducir en orden, esa venta ya está puesta.
 --
---  `registrar_devolucion` y `registrar_pedido_canal` se definen más adelante
---  (migraciones 14 y 15). PL/pgSQL resuelve las llamadas al ejecutar, no al
+--  `registrar_devolucion`, `registrar_pedido_canal` y `servir_linea_escaneada`
+--  se definen más adelante (migraciones 14, 15 y 21). PL/pgSQL resuelve las llamadas al ejecutar, no al
 --  crear, así que el orden de los ficheros no importa mientras todas se
 --  apliquen. Este despachador se mantiene en un único sitio a propósito:
 --  repartirlo entre migraciones haría que acabaran existiendo dos versiones.
@@ -123,16 +123,26 @@ begin
         -- Servir un pedido reservado no es una venta desde cero: hay que
         -- encontrar el pedido que se reprodujo antes. Se busca por el
         -- identificador del canal, porque los uuid internos son otros.
-        if v_datos ->> 'desde' = 'reservas' then
+        if v_datos ->> 'desde' in ('reservas', 'escaner') then
           v_pedido := (pedido_de_canal(v_datos ->> 'pedido_origen',
                                        v_datos ->> 'pedido_origen_id') ->> 'pedido_id')::uuid;
           if v_pedido is null then
             v_omitidas := v_omitidas + 1;
             continue;
           end if;
-          perform servir_reservas_pedido(
-            v_id, v_pedido, v_usuario, v_cuando,
-            coalesce(o ->> 'origen', 'app'), o ->> 'origen_id');
+
+          if v_datos ->> 'desde' = 'escaner' then
+            -- Preparación con escáner: se sirvió un lote concreto, no las
+            -- reservas. Reproducirlo como si fueran reservas cambiaría de qué
+            -- lote salió la mercancía.
+            perform servir_linea_escaneada(
+              v_id, v_pedido, v_datos ->> 'lote_id',
+              (v_datos ->> 'cantidad')::numeric, v_usuario, v_cuando);
+          else
+            perform servir_reservas_pedido(
+              v_id, v_pedido, v_usuario, v_cuando,
+              coalesce(o ->> 'origen', 'app'), o ->> 'origen_id');
+          end if;
         else
           perform registrar_venta(
             p_operacion_id => v_id,

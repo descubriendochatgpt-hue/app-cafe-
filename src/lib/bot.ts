@@ -3,8 +3,7 @@
  *
  * Telegram es un transporte; la lógica vive aquí. Así se puede probar sin
  * pasar por Telegram —la pantalla de Ajustes hace las mismas preguntas— y
- * añadir mañana otro canal no toca nada de esto. De hecho el cambio de
- * Instagram a Telegram fue exactamente eso: un fichero de transporte.
+ * añadir mañana otro canal se queda en escribir su fichero de transporte.
  */
 import { comoSistema } from './sistema';
 import { comoUsuario } from './supabase';

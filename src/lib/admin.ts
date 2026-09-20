@@ -83,6 +83,16 @@ export const clienteSchema = z.object({
   notas: opcional(300),
 });
 
+export const cajaSchema = z.object({
+  caja_id: z.string().regex(/^[A-Z0-9_]{1,12}$/, 'Hasta 12 caracteres, mayúsculas y números'),
+  nombre: texto(60).min(2),
+  largo_cm: z.number().positive().max(300),
+  ancho_cm: z.number().positive().max(300),
+  alto_cm: z.number().positive().max(300),
+  peso_vacio_g: z.number().int().nonnegative().max(20000),
+  activo: z.boolean().default(true),
+});
+
 export const parametroSchema = z.object({
   clave: z.string().regex(/^[a-z0-9_]{3,40}$/),
   valor: z.string().max(500),
@@ -123,6 +133,8 @@ export const RECURSOS: Record<string, Recurso> = {
   parametros:  { tabla: 'parametros', clave: 'clave', esquema: parametroSchema,
                  minimo: 'ADMIN', orden: 'clave', borrable: false },
   ubicaciones: { tabla: 'ubicaciones', clave: 'ubicacion_id', esquema: ubicacionSchema,
+                 minimo: 'GESTOR', orden: 'nombre', borrable: false },
+  cajas:       { tabla: 'tipos_caja', clave: 'caja_id', esquema: cajaSchema,
                  minimo: 'GESTOR', orden: 'nombre', borrable: false },
 };
 

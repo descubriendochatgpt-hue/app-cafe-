@@ -1,14 +1,12 @@
 /**
  * Bot de consulta por Telegram.
  *
- * Se eligió Telegram sobre Instagram por una razón práctica: con @BotFather
- * se obtiene un token y funciona en dos minutos, sin cuenta profesional, sin
- * página de Facebook y sin esperar la revisión de Meta.
+ * Con @BotFather se obtiene un token y funciona en dos minutos: sin cuenta
+ * de empresa, sin aprobación de nadie y sin esperas.
  *
- * Y por una de fondo: un mensaje de Telegram es privado por naturaleza. Una
- * cuenta de Instagram es un buzón público al que escribe cualquier cliente,
- * lo que convertía «a quién respondo» en el problema principal. Aquí sigue
- * habiendo autorización —la misma—, pero el canal no invita al ruido.
+ * Aun así hay autorización, y estricta: al bot le puede escribir cualquiera
+ * que dé con él, así que solo responde a quien se haya dado de alta con un
+ * enlace de un solo uso, y siempre con el perfil de esa persona.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 

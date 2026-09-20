@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from './Estado';
-import type { Rol } from '@/lib/tipos';
+import { alcanza, type Rol } from '@/lib/tipos';
 
 /**
  * Cabecera con el indicador de conexión. En un mercado es la información más
@@ -39,6 +39,7 @@ export function Cabecera({ nombre, rol }: { nombre: string; rol: Rol }) {
 }
 
 const SECCIONES = [
+  { href: '/panel', icono: '📊', texto: 'Panel', minimo: 'GESTOR' },
   { href: '/escanear', icono: '📷', texto: 'Escanear', minimo: 'OPERARIO' },
   { href: '/pedidos', icono: '📋', texto: 'Pedidos', minimo: 'OPERARIO' },
   { href: '/stock', icono: '📦', texto: 'Stock', minimo: 'OPERARIO' },
@@ -50,10 +51,14 @@ const SECCIONES = [
 
 export function Navegacion({ rol }: { rol: Rol }) {
   const ruta = usePathname();
-  void rol;
+  // La barra de un móvil solo da de sí hasta cierto punto. El panel es la
+  // pantalla de quien mira el negocio, así que a un operario no le ocupa
+  // sitio: la ruta le sigue funcionando si llega a ella, con las cifras de
+  // dinero fuera, pero no le estorba en el camino de cobrar.
+  const visibles = SECCIONES.filter((s) => alcanza(rol, s.minimo));
   return (
     <nav className="inferior">
-      {SECCIONES.map((s) => (
+      {visibles.map((s) => (
         <Link key={s.href} href={s.href} className={ruta.startsWith(s.href) ? 'activo' : ''}>
           <span className="icono" aria-hidden>{s.icono}</span>
           {s.texto}

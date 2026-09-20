@@ -150,8 +150,9 @@ Nada se descarta en silencio y nada se inventa:
 |---|---|---|
 | Base de datos | Supabase (Postgres) | Transacciones y bloqueo de fila, que es de lo que depende todo lo anterior |
 | Despliegue | Vercel | Rutas de servidor y tareas programadas para los conectores |
-| Interfaz | Next.js · PWA | El escáner tiene que funcionar sin cobertura en un mercado |
+| Interfaz | Next.js 16 · React 19 · PWA | El escáner tiene que funcionar sin cobertura en un mercado |
 | Acceso | PIN → JWT firmado con el secreto de Supabase | Rápido con las manos sucias; RLS evalúa el rol del token |
+| Correo | Resend | Un correo al día; una capa de abstracción encima sería más código que el envío |
 
 El navegador no habla con Supabase: habla con las rutas de este servidor. Así
 el control de acceso está en un único sitio.

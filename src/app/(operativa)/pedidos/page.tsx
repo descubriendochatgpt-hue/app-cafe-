@@ -9,6 +9,7 @@
  * descuenta de verdad.
  */
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 
 interface Linea { linea_id: string; sku: string; cantidad: number; servidas: number; importe?: number }
 interface Pedido {
@@ -106,12 +107,15 @@ export default function Pedidos() {
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '.5rem', marginTop: '.8rem' }}>
+          <div style={{ display: 'flex', gap: '.5rem', marginTop: '.8rem', flexWrap: 'wrap' }}>
+            <Link href={`/pedidos/${p.pedido_id}`} style={{ flex: 1 }}>
+              <button className="ancho" type="button">Preparar</button>
+            </Link>
             <button
-              style={{ flex: 1 }} disabled={ocupado === p.pedido_id}
+              className="secundario" disabled={ocupado === p.pedido_id}
               onClick={() => void actuar(p.pedido_id, 'servir')}
             >
-              {ocupado === p.pedido_id ? 'Guardando…' : 'Servido'}
+              {ocupado === p.pedido_id ? 'Guardando…' : 'Servir todo'}
             </button>
             {puedeCancelar && (
               <button

@@ -83,6 +83,10 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | Un enlace de pedido no se puede usar para otra cosa | Precio del servidor, freno a repetidos, revocación inmediata |
 | El PIN aguanta la fuerza bruta | Bloqueo creciente, y durante el bloqueo ni el PIN correcto abre |
 | El bot no habla con desconocidos | Código de un solo uso que caduca, y consulta con el perfil de quien pregunta |
+| Preparar descuenta y empaquetar no | El bulto no toca el libro: si lo tocara, la salida se contaría dos veces |
+| El panel no contradice a los datos | La serie por día suma lo mismo que el total, y el stock, lo mismo que los saldos |
+| El operario no ve un solo importe | No es que la pantalla los oculte: la respuesta no los trae |
+| El aviso diario no se manda dos veces | La fecha es clave primaria; si el proveedor falla, se suelta y se reintenta |
 
 ## Despliegue en Vercel
 
@@ -114,6 +118,22 @@ src/app/api/                rutas de servidor (único camino a los datos)
 docs/                       arquitectura, decisiones y migración
 ```
 
+## El aviso de cada mañana
+
+Un correo al amanecer con lo que se vendió ayer y con lo que hay que mirar
+hoy. Lleva **los nombres dentro** —qué referencia está bajo mínimos, qué
+pedido lleva dos días sin preparar, qué lote se está pasando—, porque un
+aviso que obliga a abrir la aplicación para entenderlo acaba sin leerse.
+
+Sale **una vez al día**, y eso lo garantiza la base de datos, no el
+servidor: la fecha es clave primaria, así que un cron disparado dos veces no
+manda dos correos. Si el proveedor falla, la reserva se suelta y el
+siguiente intento sí lo manda.
+
+Se enciende rellenando `RESEND_API_KEY` y `AVISOS_PARA` en el fichero de
+integraciones. Sin esas claves, la aplicación funciona igual: el mismo
+contenido está en el Panel.
+
 ## Preguntarle al negocio
 
 Hay un bot al que se le pregunta en lenguaje llano —«stock etiopía»,
@@ -130,10 +150,12 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 
 | Pantalla | Para qué |
 |---|---|
+| **Panel** | Cómo va el negocio: facturación, margen, ventas por día y por canal, producción y lo que hay que mirar hoy. Solo para gestor o administrador. |
 | **Escanear** | Consultar, vender, entradas, salidas, traslados e inventario. Se elige el modo una vez y se escanea seguido. |
 | **Stock** | Existencias por artículo y ubicación, con avisos de mínimo y de frescura. |
 | **Tueste** | Consume verde y produce paquetes, con la merma calculada y avisada si se sale de lo razonable. |
 | **Pedidos** | Lo pendiente de salir, de la web y de hostelería. Marcar «Servido» descuenta el stock reservado. |
+| **Pedidos → uno** | Preparar escaneando línea a línea, y empaquetar en bultos con la caja sugerida y el peso calculado. |
 | **Etiquetas** | PDF con QR de lote para venta propia y con EAN-13 para El Corte Inglés, en rejillas A4 y rollo térmico. |
 | **Informes** | Depósito con su cuadre, lotes que envejecen y trazabilidad hasta el saco de origen. |
 | **Ajustes** | Estado de la cola, operaciones que necesitan una decisión, e integraciones. |

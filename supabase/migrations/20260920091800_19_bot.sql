@@ -5,10 +5,10 @@
 --
 --  EL PROBLEMA DE FONDO, Y LA DECISIÓN QUE LO RESUELVE
 --
---  A una cuenta de Instagram le escribe cualquiera. Si el bot respondiera a
+--  A un bot le puede escribir cualquiera que dé con él. Si respondiera a
 --  quien le hable, un cliente podría preguntar cuánto stock hay, qué margen
 --  se saca o qué se le vende a El Corte Inglés. Sería una fuga de datos del
---  negocio por un canal público.
+--  negocio.
 --
 --  Por eso el bot NO responde a nadie que no esté autorizado, y autorizarse
 --  no es algo que uno pueda hacer solo: hace falta un código de un solo uso
@@ -21,7 +21,7 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create table bot_autorizados (
-  canal       text not null check (canal in ('instagram', 'prueba')),
+  canal       text not null check (canal in ('telegram', 'prueba')),
   id_externo  text not null,
   usuario_id  uuid not null references usuarios (usuario_id) on delete cascade,
   alias       text,
@@ -69,7 +69,9 @@ insert into parametros (clave, valor, descripcion) values
    'Hola. Esta cuenta no atiende pedidos por mensaje directo; escríbenos y te contamos.',
    'Lo que se responde a quien no está autorizado. Vacío = no responder nada'),
   ('bot_consultas_max_hora', '60',
-   'Consultas por persona y hora. Freno a un bucle o a un uso desbocado')
+   'Consultas por persona y hora. Freno a un bucle o a un uso desbocado'),
+  ('telegram_usuario_bot', '',
+   'Nombre del bot en Telegram, sin la arroba. Se usa para el enlace de alta')
 on conflict (clave) do nothing;
 
 

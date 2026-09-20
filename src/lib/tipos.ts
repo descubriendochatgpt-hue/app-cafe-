@@ -9,6 +9,21 @@ export type Rol = (typeof ROLES)[number];
 /** El actor de los conectores automáticos. No es un rol de persona. */
 export type Actor = Rol | 'SISTEMA';
 
+/**
+ * Jerarquía de permisos. Tiene que coincidir con app.nivel() en Postgres.
+ *
+ * Vive aquí, entre los tipos, y no junto a la firma del token: es un hecho
+ * del dominio, y la navegación —que corre en el navegador— necesita
+ * consultarlo sin arrastrarse la librería de criptografía al paquete.
+ */
+export const NIVEL: Record<Actor, number> = {
+  OPERARIO: 1, GESTOR: 2, ADMIN: 3, SISTEMA: 4,
+};
+
+export function alcanza(rol: Actor, minimo: Actor): boolean {
+  return NIVEL[rol] >= NIVEL[minimo];
+}
+
 export const TIPOS_OPERACION = [
   'RECEPCION_VERDE', 'TUESTE', 'TRASLADO', 'VENTA', 'DEVOLUCION',
   'ENTRADA', 'SALIDA', 'MERMA', 'AJUSTE', 'RESERVA', 'LIBERACION',

@@ -89,6 +89,20 @@ export const recuentoSchema = z.object({
   nota: z.string().nullish(),
 });
 
+/**
+ * Preparar un pedido escaneando lo que se coge del estante.
+ *
+ * Va por la cola como todo lo demás: preparar es trabajo de almacén, y el
+ * almacén puede quedarse sin cobertura igual que un mercado.
+ */
+export const preparacionSchema = z.object({
+  operacionId: uuid,
+  pedidoId: z.string().uuid(),
+  loteId: z.string().min(4),
+  cantidad: cantidadPositiva,
+  ocurridoEn: momento,
+});
+
 export const recepcionVerdeSchema = z.object({
   operacionId: uuid,
   sku,
@@ -193,6 +207,16 @@ export function registrarRecuento(db: SupabaseClient, r: z.infer<typeof recuento
   });
 }
 
+export function registrarPreparacion(db: SupabaseClient, p: z.infer<typeof preparacionSchema>) {
+  return llamar(db, 'servir_linea_escaneada', {
+    p_operacion_id: p.operacionId,
+    p_pedido_id: p.pedidoId,
+    p_lote_id: p.loteId,
+    p_cantidad: p.cantidad,
+    p_ocurrido_en: p.ocurridoEn,
+  });
+}
+
 export function registrarRecepcionVerde(db: SupabaseClient, r: z.infer<typeof recepcionVerdeSchema>) {
   return llamar(db, 'registrar_recepcion_verde', {
     p_operacion_id: r.operacionId,
@@ -218,6 +242,7 @@ export const operacionEncolada = z.discriminatedUnion('tipo', [
   z.object({ tipo: z.literal('MOVIMIENTO'), datos: movimientoSchema }),
   z.object({ tipo: z.literal('RECUENTO'), datos: recuentoSchema }),
   z.object({ tipo: z.literal('RECEPCION_VERDE'), datos: recepcionVerdeSchema }),
+  z.object({ tipo: z.literal('PREPARACION'), datos: preparacionSchema }),
 ]);
 
 export type OperacionEncolada = z.infer<typeof operacionEncolada>;
@@ -230,5 +255,6 @@ export function despachar(db: SupabaseClient, op: OperacionEncolada): Promise<Re
     case 'MOVIMIENTO':      return registrarMovimiento(db, op.datos);
     case 'RECUENTO':        return registrarRecuento(db, op.datos);
     case 'RECEPCION_VERDE': return registrarRecepcionVerde(db, op.datos);
+    case 'PREPARACION':     return registrarPreparacion(db, op.datos);
   }
 }

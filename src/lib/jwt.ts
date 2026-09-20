@@ -7,7 +7,7 @@
  * app.rol_actual(), que son las que evalúan las políticas RLS.
  */
 import { SignJWT, jwtVerify } from 'jose';
-import { ROLES, type Rol, type Sesion, type Actor } from './tipos';
+import { ROLES, type Rol, type Sesion } from './tipos';
 
 export function esRol(valor: unknown): valor is Rol {
   return typeof valor === 'string' && (ROLES as readonly string[]).includes(valor);
@@ -59,11 +59,4 @@ export async function firmarSistema(secreto: string, horas = 1): Promise<string>
     .sign(clave(secreto));
 }
 
-/** Jerarquía de permisos. Tiene que coincidir con app.nivel() en Postgres. */
-const NIVEL: Record<Actor, number> = {
-  OPERARIO: 1, GESTOR: 2, ADMIN: 3, SISTEMA: 4,
-};
-
-export function alcanza(rol: Actor, minimo: Actor): boolean {
-  return NIVEL[rol] >= NIVEL[minimo];
-}
+export { alcanza } from './tipos';

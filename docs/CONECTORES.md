@@ -272,19 +272,6 @@ Preguntarle al negocio desde el móvil sin abrir la app: «stock etiopía»,
 **Funciona sin Telegram.** En *Ajustes → Bot* se hacen las mismas preguntas
 desde el primer día. El token solo añade el canal.
 
-### Por qué Telegram y no Instagram
-
-Se planteó Instagram primero y se cambió, por dos razones:
-
-1. **Instagram exige cuenta profesional, página de Facebook, app de Meta y su
-   revisión**, que tarda. Con Telegram se habla con @BotFather, se copia un
-   token y funciona en dos minutos.
-2. **Una cuenta de Instagram es un buzón público** al que escribe cualquier
-   cliente. Eso convertía «a quién respondo» en el problema principal. Un chat
-   de Telegram no invita a ese ruido.
-
-La autorización se mantiene igual de estricta: no dependía del canal.
-
 ### Cómo se pone en marcha
 
 1. En Telegram, hablar con **@BotFather** → `/newbot` → nombre y usuario.
