@@ -10,11 +10,13 @@
  */
 import { useMemo, useState } from 'react';
 import { useApp } from '@/componentes/Estado';
+import { RecepcionVerde } from '@/componentes/RecepcionVerde';
 import { registrar } from '@/lib/sincronizacion';
 import { nuevaOperacionId, ahora } from '@/lib/uuid';
 
 export default function Tueste() {
   const { catalogo, subir } = useApp();
+  const [pestana, setPestana] = useState<'tostar' | 'verde'>('tostar');
   const [loteVerde, setLoteVerde] = useState('');
   const [kg, setKg] = useState('');
   const [sku, setSku] = useState('');
@@ -83,9 +85,25 @@ export default function Tueste() {
 
   return (
     <main>
-      <h1>Nuevo tueste</h1>
-      <p className="sub">Consume café verde y produce paquetes, en una sola operación.</p>
+      <h1>{pestana === 'tostar' ? 'Nuevo tueste' : 'Recibir café verde'}</h1>
+      <p className="sub">
+        {pestana === 'tostar'
+          ? 'Consume café verde y produce paquetes, en una sola operación.'
+          : 'Da de alta un saco. Es el principio de la cadena de trazabilidad.'}
+      </p>
 
+      <div className="chips">
+        <button className={pestana === 'tostar' ? 'on' : ''} onClick={() => setPestana('tostar')}>
+          Tostar
+        </button>
+        <button className={pestana === 'verde' ? 'on' : ''} onClick={() => setPestana('verde')}>
+          Recibir verde
+        </button>
+      </div>
+
+      {pestana === 'verde' && <RecepcionVerde />}
+
+      {pestana === 'tostar' && <>
       {mensaje && <div className={`aviso ${mensaje.tipo}`}>{mensaje.texto}</div>}
 
       <form onSubmit={(e) => void guardar(e)}>
@@ -156,6 +174,7 @@ export default function Tueste() {
           {ocupado ? 'Guardando…' : 'Registrar tueste'}
         </button>
       </form>
+      </>}
     </main>
   );
 }

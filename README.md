@@ -82,6 +82,7 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | Reservar compromete sin descontar | Un pedido web reserva, servir descuenta, cancelar devuelve |
 | Un enlace de pedido no se puede usar para otra cosa | Precio del servidor, freno a repetidos, revocación inmediata |
 | El PIN aguanta la fuerza bruta | Bloqueo creciente, y durante el bloqueo ni el PIN correcto abre |
+| El bot no habla con desconocidos | Código de un solo uso que caduca, y consulta con el perfil de quien pregunta |
 
 ## Despliegue en Vercel
 
@@ -103,6 +104,8 @@ scripts/importar.mjs        migración desde las hojas (genera SQL revisable)
 src/lib/loyverse.ts         conector de TPV: firma, mapeo y proceso de recibos
 src/lib/woocommerce.ts      conector web: estados del pedido y stock de vuelta
 src/app/pedido/[token]/     formulario público de hostelería (único sin sesión)
+src/lib/consultas.ts        motor de preguntas del bot, independiente del canal
+src/lib/instagram.ts        transporte del bot: firma, mensajes y respuesta
 src/lib/ean13.ts            codificación EAN-13 (vectorial, verificada)
 src/lib/                    capa tipada sobre las funciones de dominio
 src/componentes/            escáner, estado compartido, armazón
@@ -110,6 +113,14 @@ src/app/(operativa)/        pantallas: escanear, stock, tueste, ajustes
 src/app/api/                rutas de servidor (único camino a los datos)
 docs/                       arquitectura, decisiones y migración
 ```
+
+## Preguntarle al negocio
+
+Hay un bot al que se le pregunta en lenguaje llano —«stock etiopía»,
+«pedidos», «cómo va el depósito»— desde *Ajustes → Bot* o por mensaje directo
+de Instagram. Responde **con el perfil de quien pregunta**, así que un
+operario no obtiene importes, y **solo a quien se haya dado de alta** con un
+código de un solo uso. Ver [`docs/CONECTORES.md`](docs/CONECTORES.md).
 
 ## La aplicación de almacén
 
@@ -124,6 +135,7 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 | **Tueste** | Consume verde y produce paquetes, con la merma calculada y avisada si se sale de lo razonable. |
 | **Pedidos** | Lo pendiente de salir, de la web y de hostelería. Marcar «Servido» descuenta el stock reservado. |
 | **Etiquetas** | PDF con QR de lote para venta propia y con EAN-13 para El Corte Inglés, en rejillas A4 y rollo térmico. |
+| **Informes** | Depósito con su cuadre, lotes que envejecen y trazabilidad hasta el saco de origen. |
 | **Ajustes** | Estado de la cola, operaciones que necesitan una decisión, e integraciones. |
 
 ## Primer acceso

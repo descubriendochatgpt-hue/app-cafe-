@@ -66,6 +66,12 @@ export default function Ajustes() {
         </>
       )}
 
+      <h2>Catálogo</h2>
+      <div className="tarjeta">
+        <div className="fila"><Link href="/ajustes/catalogo">Cafés, formatos, referencias y precios →</Link></div>
+        <div className="fila"><Link href="/ajustes/clientes">Clientes →</Link></div>
+      </div>
+
       <h2>Configuración</h2>
       <div className="tarjeta">
         <div className="fila"><Link href="/ajustes/conciliacion">Conciliación →</Link></div>
@@ -73,6 +79,13 @@ export default function Ajustes() {
         <div className="fila"><Link href="/ajustes/loyverse">Artículos de Loyverse →</Link></div>
         <div className="fila"><Link href="/ajustes/woocommerce">Productos de WooCommerce →</Link></div>
         <div className="fila"><Link href="/ajustes/hosteleria">Enlaces de hostelería →</Link></div>
+      </div>
+
+      <h2>Administración</h2>
+      <div className="tarjeta">
+        <div className="fila"><Link href="/ajustes/bot">Bot de consulta →</Link></div>
+        <div className="fila"><Link href="/ajustes/usuarios">Usuarios y perfiles →</Link></div>
+        <div className="fila"><Link href="/ajustes/parametros">Parámetros →</Link></div>
       </div>
 
       <button className="secundario ancho" style={{ marginTop: '1.5rem' }} onClick={() => void salir()}>
