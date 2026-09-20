@@ -8,6 +8,13 @@ const cuerpo = z.object({
   codigoExterno: z.string().min(1).max(200),
   sku: z.string().regex(/^[A-Z0-9][A-Z0-9-]{1,39}$/).nullable(),
   descripcion: z.string().max(200).nullish(),
+  // Datos propios del canal. En WooCommerce hace falta saber si el código es
+  // una variación y de qué producto cuelga: la API para actualizar su stock
+  // es distinta según el caso.
+  datos: z.object({
+    tipo: z.enum(['simple', 'variacion']).optional(),
+    padre: z.number().int().positive().nullable().optional(),
+  }).optional(),
 });
 
 /** Crea o quita un mapeo. `sku: null` lo borra. */
@@ -25,7 +32,7 @@ export async function POST(peticion: Request) {
   }
 
   const db = comoUsuario(token);
-  const { canal, codigoExterno, sku, descripcion } = leido.data;
+  const { canal, codigoExterno, sku, descripcion, datos } = leido.data;
 
   if (sku === null) {
     const { error } = await db.from('mapeo_articulos').delete()
@@ -35,7 +42,9 @@ export async function POST(peticion: Request) {
   }
 
   const { error } = await db.from('mapeo_articulos').upsert({
-    canal, codigo_externo: codigoExterno, sku, descripcion_externa: descripcion ?? null,
+    canal, codigo_externo: codigoExterno, sku,
+    descripcion_externa: descripcion ?? null,
+    datos: datos ?? {},
   }, { onConflict: 'canal,codigo_externo' });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

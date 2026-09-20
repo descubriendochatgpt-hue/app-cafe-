@@ -71,6 +71,7 @@ export default function Ajustes() {
         <div className="fila"><Link href="/ajustes/conciliacion">Conciliación →</Link></div>
         <div className="fila"><Link href="/ajustes/integraciones">Integraciones y webhooks →</Link></div>
         <div className="fila"><Link href="/ajustes/loyverse">Artículos de Loyverse →</Link></div>
+        <div className="fila"><Link href="/ajustes/woocommerce">Productos de WooCommerce →</Link></div>
       </div>
 
       <button className="secundario ancho" style={{ marginTop: '1.5rem' }} onClick={() => void salir()}>

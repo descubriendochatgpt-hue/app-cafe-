@@ -14,9 +14,11 @@
 --  para las devoluciones, que buscan los lotes de la venta que devuelven:
 --  al reproducir en orden, esa venta ya está puesta.
 --
---  `registrar_devolucion` se define más adelante (migración 14). PL/pgSQL
---  resuelve las llamadas al ejecutar, no al crear, así que el orden de los
---  ficheros no importa mientras todas se apliquen.
+--  `registrar_devolucion` y `registrar_pedido_canal` se definen más adelante
+--  (migraciones 14 y 15). PL/pgSQL resuelve las llamadas al ejecutar, no al
+--  crear, así que el orden de los ficheros no importa mientras todas se
+--  apliquen. Este despachador se mantiene en un único sitio a propósito:
+--  repartirlo entre migraciones haría que acabaran existiendo dos versiones.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create or replace function app.reproducir(p_operaciones jsonb)
@@ -32,6 +34,7 @@ declare
   v_id         uuid;
   v_usuario    uuid;
   v_cuando     timestamptz;
+  v_pedido     uuid;
   v_hechas     int := 0;
   v_omitidas   int := 0;
 begin
@@ -84,11 +87,52 @@ begin
           p_ocurrido_en       => v_cuando,
           p_nota              => o ->> 'nota');
 
-      when 'VENTA' then
-        -- Las ventas servidas desde reservas se reproducen con su pedido,
-        -- no por esta vía.
-        if v_datos ->> 'desde' = 'reservas' then
+      when 'RESERVA' then
+        -- La reserva de un canal trae sus líneas y se puede rehacer entera.
+        -- La de un pedido creado a mano no: ese pedido no nació de ninguna
+        -- operación reproducible.
+        if v_datos ? 'lineas' then
+          perform registrar_pedido_canal(
+            p_operacion_id => v_id,
+            p_ubicacion_id => v_datos ->> 'ubicacion_id',
+            p_lineas       => v_datos -> 'lineas',
+            p_canal        => coalesce(v_datos ->> 'canal', 'Online'),
+            p_origen       => coalesce(o ->> 'origen', 'app'),
+            p_origen_id    => o ->> 'origen_id',
+            p_cliente_id   => nullif(v_datos ->> 'cliente_id', '')::uuid,
+            p_documento_fiscal         => v_datos ->> 'documento_fiscal',
+            p_documento_fiscal_sistema => v_datos ->> 'documento_fiscal_sistema',
+            p_forma_pago   => v_datos ->> 'forma_pago',
+            p_ocurrido_en  => v_cuando,
+            p_nota         => o ->> 'nota');
+        else
           v_omitidas := v_omitidas + 1;
+          continue;
+        end if;
+
+      when 'LIBERACION' then
+        v_pedido := (pedido_de_canal(v_datos ->> 'pedido_origen',
+                                     v_datos ->> 'pedido_origen_id') ->> 'pedido_id')::uuid;
+        if v_pedido is null then
+          v_omitidas := v_omitidas + 1;
+          continue;
+        end if;
+        perform liberar_reservas_pedido(v_id, v_pedido, v_usuario, v_cuando);
+
+      when 'VENTA' then
+        -- Servir un pedido reservado no es una venta desde cero: hay que
+        -- encontrar el pedido que se reprodujo antes. Se busca por el
+        -- identificador del canal, porque los uuid internos son otros.
+        if v_datos ->> 'desde' = 'reservas' then
+          v_pedido := (pedido_de_canal(v_datos ->> 'pedido_origen',
+                                       v_datos ->> 'pedido_origen_id') ->> 'pedido_id')::uuid;
+          if v_pedido is null then
+            v_omitidas := v_omitidas + 1;
+            continue;
+          end if;
+          perform servir_reservas_pedido(
+            v_id, v_pedido, v_usuario, v_cuando,
+            coalesce(o ->> 'origen', 'app'), o ->> 'origen_id');
         else
           perform registrar_venta(
             p_operacion_id => v_id,
@@ -156,7 +200,6 @@ begin
           p_nota         => o ->> 'nota');
 
       else
-        -- RESERVA y LIBERACION no tocan `cantidad`, solo la parte comprometida.
         v_omitidas := v_omitidas + 1;
         continue;
     end case;

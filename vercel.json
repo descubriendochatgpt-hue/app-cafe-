@@ -4,6 +4,7 @@
   "regions": ["cdg1"],
   "crons": [
     { "path": "/api/cron/loyverse", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/eventos", "schedule": "*/10 * * * *" }
+    { "path": "/api/cron/eventos", "schedule": "*/10 * * * *" },
+    { "path": "/api/cron/woocommerce", "schedule": "*/15 * * * *" }
   ]
 }

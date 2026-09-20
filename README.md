@@ -4,10 +4,9 @@ Maestro único de inventario y pedidos multicanal para un tostador de café de
 especialidad: importación de verde → tueste → empaquetado → cuatro canales de
 venta.
 
-> **Estado: fases 1, 2 y 3 terminadas.** Núcleo de inventario, aplicación de
-> almacén con etiquetas, migración desde las hojas y conector de Loyverse.
-> Falta WooCommerce (fase 4) y hostelería (fase 5); sus ranuras ya están en el
-> fichero de integraciones.
+> **Estado: fases 1 a 4 terminadas.** Núcleo de inventario, aplicación de
+> almacén con etiquetas, migración desde las hojas y los conectores de
+> Loyverse y WooCommerce. Falta hostelería (fase 5).
 
 ## La idea
 
@@ -77,6 +76,7 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | El depósito cuadra | servido − vendido − devuelto = saldo, con descuadre cero |
 | La migración no pierde ni inventa stock | Se importa un export de ejemplo y se compara con la propia hoja |
 | El conector no duplica ni pierde ventas | Reenvíos ignorados, reintentos con espera, devolución al lote original |
+| Reservar compromete sin descontar | Un pedido web reserva, servir descuenta, cancelar devuelve |
 
 ## Despliegue en Vercel
 
@@ -95,7 +95,8 @@ integraciones.ejemplo.env   el único fichero que hay que rellenar
 supabase/migrations/        esquema, funciones de dominio y políticas RLS
 supabase/tests/             criterios de aceptación, ejecutables
 scripts/importar.mjs        migración desde las hojas (genera SQL revisable)
-src/lib/loyverse.ts         conector: firma, mapeo y proceso de recibos
+src/lib/loyverse.ts         conector de TPV: firma, mapeo y proceso de recibos
+src/lib/woocommerce.ts      conector web: estados del pedido y stock de vuelta
 src/lib/ean13.ts            codificación EAN-13 (vectorial, verificada)
 src/lib/                    capa tipada sobre las funciones de dominio
 src/componentes/            escáner, estado compartido, armazón

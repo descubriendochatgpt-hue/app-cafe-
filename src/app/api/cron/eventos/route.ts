@@ -9,8 +9,9 @@
 import { NextResponse } from 'next/server';
 import { comoSistema } from '@/lib/sistema';
 import { procesarCola, operacionIdDe, type EventoEnCola } from '@/lib/ingesta';
-import { loyverse as configLoyverse } from '@/lib/integraciones';
+import { loyverse as configLoyverse, woocommerce as configWoo } from '@/lib/integraciones';
 import { procesarRecibo, type Recibo } from '@/lib/loyverse';
+import { procesarPedido, type Pedido } from '@/lib/woocommerce';
 import { autorizada } from '@/lib/cron';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,17 @@ export async function GET(peticion: Request) {
         ubicacion: configLoyverse.ubicacion, operacionId, eventoId: evento.evento_id,
       });
       return { operacionId };
+    });
+  }
+
+  if (configWoo.activo) {
+    resultado.woocommerce = await procesarCola(db, 'woocommerce', async (evento: EventoEnCola) => {
+      await procesarPedido(db, evento.payload as Pedido, {
+        ubicacion: configWoo.ubicacion, eventoId: evento.evento_id,
+      });
+      // El identificador de operación lo decide cada paso del pedido dentro
+      // de procesarPedido, así que aquí no hay uno solo que devolver.
+      return { operacionId: null };
     });
   }
 

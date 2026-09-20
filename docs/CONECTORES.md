@@ -119,9 +119,79 @@ operaciones** y esa vista no cambia.
 
 ## WooCommerce
 
-Las ranuras están preparadas en el fichero de integraciones y la pantalla de
-estado ya muestra sus URL de webhook, pero **el conector todavía no está
-implementado**: es la siguiente fase. Rellenar sus claves hoy no activa nada.
+### Qué hay que pegar, y dónde
+
+| Dónde | Qué |
+|---|---|
+| `.env.local` → `WOOCOMMERCE_URL` | La dirección de la tienda, sin barra final |
+| `.env.local` → `WOOCOMMERCE_CONSUMER_KEY` y `_SECRET` | Ajustes → Avanzado → API REST → Añadir clave, con permiso de **Lectura/Escritura** |
+| `.env.local` → `WOOCOMMERCE_WEBHOOK_SECRET` | El mismo valor que pongas en el campo «Secreto» de cada webhook |
+| WooCommerce → Ajustes → Avanzado → Webhooks | `https://TU-DOMINIO/api/webhooks/woocommerce`, tres webhooks: pedido creado, actualizado y eliminado |
+
+La escritura hace falta para lo segundo que hace este conector: publicar el
+stock de vuelta en la tienda.
+
+Después, en **Ajustes → Productos de WooCommerce**, empareja cada producto con
+su referencia interna.
+
+> **Desactiva la gestión de stock de WooCommerce** en los productos
+> sincronizados. Si la dejas puesta, la tienda descontará por su cuenta además
+> de recibir nuestros números, y los dos se irán separando. Aquí manda el
+> stock de esta app.
+
+### Un pedido no es un recibo
+
+Es la diferencia de fondo con Loyverse. Un recibo de TPV es un hecho cerrado;
+un pedido web es una **máquina de estados**. El mismo pedido avisa al crearse,
+al pagarse, al enviarse y al reembolsarse, y cada aviso trae el pedido entero.
+Contar cada aviso como una venta multiplicaría el stock que sale.
+
+Por eso aquí no se registra una venta: se **avanza un pedido**.
+
+| Estado en WooCommerce | Qué pasa con el stock |
+|---|---|
+| `pending` | Nada. Es un carrito sin pagar. |
+| `processing`, `on-hold` | Se **reserva**: queda comprometido, pero sigue en el almacén. |
+| `completed` | Se **sirve**: ahora sí sale del libro. |
+| `cancelled`, `failed`, `refunded` | Se suelta lo reservado, o vuelve el stock si ya se había servido. |
+
+Esos estados se ajustan en el fichero de integraciones sin tocar código. Si tu
+tienda envía en cuanto entra el pago, sin pasar por `completed`, pon
+`processing` en `WOOCOMMERCE_ESTADOS_SERVIDO`.
+
+**Por qué reservar y no vender directamente.** Entre que alguien paga en la web
+y que sale el paquete pasan horas o días. Durante ese hueco la mercancía sigue
+en el almacén, pero ya no es vendible: sin la reserva, el mismo último paquete
+se puede vender por la web el viernes y en un mercado el sábado, y uno de los
+dos clientes se queda sin café.
+
+Cada paso lleva su propio identificador derivado del pedido, así que repetir un
+aviso no repite el paso. El evento se indexa por pedido **y estado**: indexarlo
+solo por pedido haría que el aviso de «enviado» se descartara como repetido del
+de «pagado», y el stock nunca llegaría a descontarse.
+
+### Publicar el stock en la tienda
+
+Cada quince minutos se publica lo **disponible** —existencias menos lo ya
+comprometido por otros pedidos— en la ubicación dedicada a la web, menos el
+colchón configurado. Sin esto, la web seguiría vendiendo el café que se vendió
+el sábado en un mercado.
+
+Solo se envían las referencias cuyo número ha cambiado. No es por rendimiento,
+sino para no llenar el registro de cambios de la tienda con ruido que oculte
+los cambios de verdad.
+
+Tener una ubicación `ONLINE` separada del almacén es lo que permite decidir
+cuánto se expone a la web sin arriesgar lo que va cargado en la furgoneta.
+
+### Lo que este conector NO hace
+
+- **No trae clientes ni direcciones de envío.** Los pedidos se asocian sin
+  cliente; para preparar el envío se mira en WooCommerce.
+- **No emite documentos fiscales.** WooCommerce ya lo hace con su Verifactu;
+  la app guarda el número de pedido como referencia.
+- **No gestiona reembolsos parciales línea a línea.** Un pedido reembolsado
+  devuelve todo. Un reembolso parcial hay que ajustarlo a mano.
 
 ---
 
