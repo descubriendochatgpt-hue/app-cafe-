@@ -105,7 +105,7 @@ src/lib/loyverse.ts         conector de TPV: firma, mapeo y proceso de recibos
 src/lib/woocommerce.ts      conector web: estados del pedido y stock de vuelta
 src/app/pedido/[token]/     formulario público de hostelería (único sin sesión)
 src/lib/consultas.ts        motor de preguntas del bot, independiente del canal
-src/lib/instagram.ts        transporte del bot: firma, mensajes y respuesta
+src/lib/telegram.ts         transporte del bot: webhook, mensajes y respuesta
 src/lib/ean13.ts            codificación EAN-13 (vectorial, verificada)
 src/lib/                    capa tipada sobre las funciones de dominio
 src/componentes/            escáner, estado compartido, armazón
@@ -118,7 +118,7 @@ docs/                       arquitectura, decisiones y migración
 
 Hay un bot al que se le pregunta en lenguaje llano —«stock etiopía»,
 «pedidos», «cómo va el depósito»— desde *Ajustes → Bot* o por mensaje directo
-de Instagram. Responde **con el perfil de quien pregunta**, así que un
+de Telegram. Responde **con el perfil de quien pregunta**, así que un
 operario no obtiene importes, y **solo a quien se haya dado de alta** con un
 código de un solo uso. Ver [`docs/CONECTORES.md`](docs/CONECTORES.md).
 

@@ -264,48 +264,57 @@ el formulario solo devuelve el catálogo con el precio de ese cliente.
 
 ---
 
-## Bot de consulta por Instagram
+## Bot de consulta por Telegram
 
 Preguntarle al negocio desde el móvil sin abrir la app: «stock etiopía»,
 «pedidos», «cómo va el depósito».
 
-**Funciona sin Instagram.** En *Ajustes → Bot* se hacen las mismas preguntas
-desde el primer día. Las claves de Meta solo añaden el canal.
+**Funciona sin Telegram.** En *Ajustes → Bot* se hacen las mismas preguntas
+desde el primer día. El token solo añade el canal.
 
-### El problema de fondo, y la decisión que lo resuelve
+### Por qué Telegram y no Instagram
 
-A una cuenta de Instagram **le escribe cualquiera**. Si el bot respondiera a
-quien le hable, un cliente podría preguntar cuánto stock hay, qué margen se
-saca o qué se le vende a El Corte Inglés. Sería una fuga de datos del negocio
-por un canal público.
+Se planteó Instagram primero y se cambió, por dos razones:
 
-Por eso:
+1. **Instagram exige cuenta profesional, página de Facebook, app de Meta y su
+   revisión**, que tarda. Con Telegram se habla con @BotFather, se copia un
+   token y funciona en dos minutos.
+2. **Una cuenta de Instagram es un buzón público** al que escribe cualquier
+   cliente. Eso convertía «a quién respondo» en el problema principal. Un chat
+   de Telegram no invita a ese ruido.
 
-- El bot **no responde a nadie que no esté autorizado**, y autorizarse no es
-  algo que uno pueda hacer solo: hace falta un código de un solo uso generado
-  desde dentro de la aplicación, que caduca en quince minutos y se invalida al
-  generar otro.
+La autorización se mantiene igual de estricta: no dependía del canal.
+
+### Cómo se pone en marcha
+
+1. En Telegram, hablar con **@BotFather** → `/newbot` → nombre y usuario.
+2. Pegar el token en `TELEGRAM_BOT_TOKEN` del fichero de integraciones, junto
+   con un `TELEGRAM_WEBHOOK_SECRET` inventado.
+3. En *Ajustes → Bot*, pulsar **Registrar el webhook ahora**. Esa pantalla
+   también avisa si el webhook se queda sin registrar o si Telegram reporta
+   errores de entrega.
+
+### Quién puede preguntar
+
+- El bot **no responde a nadie que no esté autorizado**, y autorizarse exige
+  un **enlace de alta de un solo uso** generado desde dentro de la aplicación
+  (`t.me/elbot?start=CODIGO`), que caduca en quince minutos y se invalida al
+  generar otro. Se abre desde el móvil y da de alta sin escribir nada.
 - Quien queda autorizado lo hace **como un usuario concreto**, y el bot
   consulta con SU perfil. Un operario que pregunte por márgenes no obtiene
   nada, y no porque el bot lo filtre: porque las políticas RLS no le devuelven
-  esas filas. Es la misma regla que en el resto de la aplicación.
-- A quien no conocemos se le responde una frase neutra configurable, o nada.
-  No se le dice ni que existe un bot.
-
-### Darse de alta
-
-1. *Ajustes → Bot → Generar código de alta.*
-2. Mandar ese código por mensaje directo a la cuenta de Instagram de la casa,
-   **desde la cuenta personal de esa persona**.
-3. El bot confirma y ya puede preguntar.
-
-Un administrador ve en esa misma pantalla quién tiene acceso y puede quitarlo.
-Dar de baja a un usuario también le cierra el bot, sin tener que acordarse.
+  esas filas.
+- **En grupos no responde nunca.** Solo en conversación privada. Si alguien
+  añadiera el bot a un grupo, las respuestas las verían personas que no están
+  autorizadas aunque quien pregunte sí lo esté.
+- Dar de baja a un usuario le cierra el bot, sin tener que acordarse.
 
 ### Qué sabe contestar
 
 `ayuda` · `stock [café]` · `mínimos` · `pedidos` · `depósito` · `frescura` ·
 `verde` · `tuestes` · `ventas` · `incidencias`
+
+Funciona con barra o sin ella: `/stock etiopía` y `stock etiopía` son lo mismo.
 
 El reconocimiento es **determinista**: palabras clave y nombres de café, no un
 modelo de lenguaje. Las respuestas son hechos de la base, y un modelo no los
@@ -313,23 +322,11 @@ mejora: solo añade una forma nueva de equivocarse, un coste por mensaje y una
 espera. Si algún día hacen falta preguntas más libres, la capa de consultas es
 el sitio donde encajaría, sin tocar lo que consulta la base.
 
-### Lo que hace falta en Meta
-
-Cuenta de Instagram **profesional** enlazada a una página de Facebook, una app
-en `developers.facebook.com` con el producto Instagram, y **revisión de Meta**
-para el permiso de mensajes. Hasta que la aprueben, solo responde a las cuentas
-de prueba que se añadan en el panel.
-
-Es la misma fricción que llevó a descartar la Cloud API de WhatsApp para los
-pedidos de hostelería. Aquí compensa: son cuatro personas preguntando, no
-cientos de clientes pidiendo. Y mientras tanto, la pantalla de Ajustes da las
-mismas respuestas.
-
 ### Lo que NO hace
 
 - **No escribe nada.** Solo consulta. Registrar un tueste o servir un pedido
-  sigue siendo cosa de la app: una confirmación por mensaje directo es
-  demasiado fácil de dar por error.
+  sigue siendo cosa de la app: una confirmación por mensaje es demasiado fácil
+  de dar por error.
 - **No manda avisos.** Responde cuando se le pregunta; no escribe por su
   cuenta.
 

@@ -31,7 +31,7 @@ const accion = z.discriminatedUnion('accion', [
   z.object({ accion: z.literal('codigo') }),
   z.object({
     accion: z.literal('revocar'),
-    canal: z.enum(['instagram', 'prueba']),
+    canal: z.enum(['telegram', 'prueba']),
     idExterno: z.string().min(1).max(120),
   }),
 ]);

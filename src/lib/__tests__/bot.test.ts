@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { createHmac } from 'node:crypto';
 import { normalizar, reconocer } from '../consultas';
-import { firmaValida, extraerMensajes, esCodigo, trocear } from '../instagram';
+import {
+  envioAutentico, extraerMensaje, esCodigo, limpiarComando, trocear,
+} from '../telegram';
 
-const SECRETO = 'secreto-de-la-app-de-meta';
-const firmar = (c: string, s = SECRETO) =>
-  'sha256=' + createHmac('sha256', s).update(c, 'utf8').digest('hex');
+const SECRETO = 'secreto-del-webhook-de-telegram';
 const cab = (v: Record<string, string>) => new Headers(v);
 
 describe('reconocer la pregunta', () => {
@@ -58,72 +57,107 @@ describe('reconocer la pregunta', () => {
   });
 });
 
-describe('firma de Meta', () => {
-  const cuerpo = '{"object":"instagram","entry":[]}';
-
-  it('acepta la firma correcta', () => {
-    expect(firmaValida(cuerpo, cab({ 'x-hub-signature-256': firmar(cuerpo) }), SECRETO).valida)
+describe('autenticidad del envío', () => {
+  it('acepta el secreto acordado', () => {
+    expect(envioAutentico(cab({ 'x-telegram-bot-api-secret-token': SECRETO }), SECRETO).valido)
       .toBe(true);
   });
 
-  it('rechaza un cuerpo manipulado después de firmar', () => {
-    const firma = firmar(cuerpo);
-    expect(firmaValida('{"object":"otro","entry":[]}', cab({ 'x-hub-signature-256': firma }), SECRETO)
-      .valida).toBe(false);
+  it('rechaza otro secreto, y también uno más largo que empiece igual', () => {
+    expect(envioAutentico(cab({ 'x-telegram-bot-api-secret-token': 'otro' }), SECRETO).valido)
+      .toBe(false);
+    expect(envioAutentico(cab({ 'x-telegram-bot-api-secret-token': `${SECRETO}x` }), SECRETO).valido)
+      .toBe(false);
   });
 
-  it('rechaza un envío sin firma cuando hay secreto', () => {
-    expect(firmaValida(cuerpo, cab({}), SECRETO).valida).toBe(false);
+  it('rechaza un envío sin el secreto', () => {
+    const r = envioAutentico(cab({}), SECRETO);
+    expect(r.valido).toBe(false);
+    expect(r.motivo).toMatch(/secreto/);
+  });
+
+  it('no lo exige si no se ha configurado', () => {
+    expect(envioAutentico(cab({}), '').valido).toBe(true);
   });
 });
 
-describe('lectura de los mensajes', () => {
-  const envio = (mensaje: Record<string, unknown>) => ({
-    object: 'instagram',
-    entry: [{ messaging: [{ sender: { id: '17841400000000000' }, message: mensaje }] }],
+describe('lectura del mensaje', () => {
+  const envio = (extra: Record<string, unknown> = {}, chat = { id: 55, type: 'private' }) => ({
+    update_id: 1,
+    message: {
+      message_id: 7,
+      from: { id: 55, is_bot: false, first_name: 'Marta', username: 'marta_cafe' },
+      chat,
+      text: 'stock',
+      ...extra,
+    },
   });
 
-  it('saca el texto y quién lo manda', () => {
-    const m = extraerMensajes(envio({ mid: 'm1', text: 'stock' }));
-    expect(m).toEqual([{ remitente: '17841400000000000', texto: 'stock', id: 'm1' }]);
+  it('saca el texto, quién lo manda y su alias', () => {
+    expect(extraerMensaje(envio())).toEqual({
+      chat: 55, remitente: '55', texto: 'stock', nombre: 'Marta', alias: 'marta_cafe',
+    });
   });
 
-  it('descarta los ecos del propio bot', () => {
-    // Sin esto el bot se respondería a sí mismo, en bucle y sin parar.
-    expect(extraerMensajes(envio({ mid: 'm2', text: 'Stock:', is_echo: true }))).toHaveLength(0);
+  it('ignora los mensajes de otros bots', () => {
+    // Dos bots hablándose producirían un bucle que no para solo.
+    expect(extraerMensaje(envio({
+      from: { id: 99, is_bot: true, first_name: 'OtroBot' },
+    }))).toBeNull();
   });
 
-  it('ignora mensajes borrados, reacciones y «visto»', () => {
-    expect(extraerMensajes(envio({ mid: 'm3', text: 'x', is_deleted: true }))).toHaveLength(0);
-    expect(extraerMensajes({
-      object: 'instagram',
-      entry: [{ messaging: [{ sender: { id: '1' }, reaction: { emoji: '❤️' } }] }],
-    })).toHaveLength(0);
+  it('SOLO atiende en conversación privada', () => {
+    // Es lo más importante de esta función: en un grupo verían la respuesta
+    // personas que no están autorizadas, aunque quien pregunte sí lo esté.
+    expect(extraerMensaje(envio({}, { id: -100, type: 'group' }))).toBeNull();
+    expect(extraerMensaje(envio({}, { id: -100, type: 'supergroup' }))).toBeNull();
+    expect(extraerMensaje(envio({}, { id: -100, type: 'channel' }))).toBeNull();
+  });
+
+  it('ignora ediciones y envíos sin texto', () => {
+    expect(extraerMensaje({ update_id: 2, edited_message: { text: 'stock' } })).toBeNull();
+    expect(extraerMensaje(envio({ text: undefined }))).toBeNull();
   });
 
   it('aguanta un envío con forma inesperada', () => {
-    expect(extraerMensajes(null)).toHaveLength(0);
-    expect(extraerMensajes({ entry: [{}] })).toHaveLength(0);
-    expect(extraerMensajes('texto suelto')).toHaveLength(0);
+    expect(extraerMensaje(null)).toBeNull();
+    expect(extraerMensaje({})).toBeNull();
+    expect(extraerMensaje('texto suelto')).toBeNull();
   });
 });
 
 describe('código de alta', () => {
-  it('reconoce un código bien escrito, con espacios o en minúsculas', () => {
+  it('lo reconoce escrito a mano', () => {
     expect(esCodigo('ABC234')).toBe('ABC234');
     expect(esCodigo(' abc234 ')).toBe('ABC234');
   });
 
+  it('lo reconoce dentro del /start del enlace de alta', () => {
+    // Es lo que manda Telegram al abrir t.me/elbot?start=ABC234
+    expect(esCodigo('/start ABC234')).toBe('ABC234');
+    expect(esCodigo('/start abc234')).toBe('ABC234');
+  });
+
   it('no confunde una pregunta con un código', () => {
-    expect(esCodigo('stock')).toBeNull();      // cinco letras
+    expect(esCodigo('stock')).toBeNull();
     expect(esCodigo('pedidos')).toBeNull();
-    expect(esCodigo('ABC23')).toBeNull();      // cinco caracteres
+    expect(esCodigo('/start')).toBeNull();
   });
 
   it('rechaza las letras y cifras que se confunden al leerlas', () => {
-    // El alfabeto excluye O/0 e I/1 a propósito: se teclea mirando otra pantalla.
     expect(esCodigo('ABC2O4')).toBeNull();
     expect(esCodigo('ABC2I4')).toBeNull();
+  });
+});
+
+describe('comandos', () => {
+  it('trata /stock y stock como la misma pregunta', () => {
+    expect(limpiarComando('/stock etiopía')).toBe('stock etiopía');
+    expect(limpiarComando('stock etiopía')).toBe('stock etiopía');
+  });
+
+  it('quita la mención al bot que añade Telegram en los grupos', () => {
+    expect(limpiarComando('/stock@cafebot etiopía')).toBe('stock etiopía');
   });
 });
 
@@ -133,11 +167,11 @@ describe('troceado de la respuesta', () => {
   });
 
   it('parte por líneas, no por la mitad de una palabra', () => {
-    const largo = Array.from({ length: 200 }, (_, i) => `Café número ${i}: 24 paquetes`).join('\n');
+    const largo = Array.from({ length: 400 }, (_, i) => `Café número ${i}: 24 paquetes`).join('\n');
     const trozos = trocear(largo);
     expect(trozos.length).toBeGreaterThan(1);
     for (const t of trozos) {
-      expect(t.length).toBeLessThanOrEqual(900);
+      expect(t.length).toBeLessThanOrEqual(3500);
       expect(t.endsWith('paquetes')).toBe(true);
     }
   });

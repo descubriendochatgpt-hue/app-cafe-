@@ -1,15 +1,17 @@
 /**
  * El bot, independiente del canal por el que llegue la pregunta.
  *
- * Instagram es un transporte; la lógica vive aquí. Así se puede probar sin
- * pasar por Meta, y añadir Telegram o el correo mañana no toca nada de esto.
+ * Telegram es un transporte; la lógica vive aquí. Así se puede probar sin
+ * pasar por Telegram —la pantalla de Ajustes hace las mismas preguntas— y
+ * añadir mañana otro canal no toca nada de esto. De hecho el cambio de
+ * Instagram a Telegram fue exactamente eso: un fichero de transporte.
  */
 import { comoSistema } from './sistema';
 import { comoUsuario } from './supabase';
 import { firmarToken } from './jwt';
 import { entorno } from './entorno';
 import { responder } from './consultas';
-import { esCodigo } from './instagram';
+import { esCodigo, limpiarComando } from './telegram';
 import type { Rol } from './tipos';
 
 export interface Respuesta {
@@ -24,7 +26,7 @@ interface Identidad {
 }
 
 export async function atender(
-  canal: 'instagram' | 'prueba',
+  canal: 'telegram' | 'prueba',
   idExterno: string,
   texto: string,
   alias?: string,
@@ -68,8 +70,8 @@ export async function atender(
       };
     }
 
-    // A una cuenta de Instagram le escribe cualquiera. A quien no conocemos no
-    // se le cuenta nada del negocio, ni siquiera que existe un bot.
+    // Al bot le puede escribir cualquiera que dé con él. A quien no conocemos
+    // no se le cuenta nada del negocio, ni siquiera que existe un bot.
     const { data: parametro } = await sistema
       .from('parametros').select('valor').eq('clave', 'bot_respuesta_desconocido').maybeSingle();
 
@@ -87,6 +89,9 @@ export async function atender(
     1,
   );
 
-  const texto_respuesta = await responder(comoUsuario(token), texto, identidad.rol);
+  // `/stock etiopía` y `stock etiopía` son la misma pregunta: Telegram manda
+  // la barra cuando se usa el menú de comandos.
+  const texto_respuesta = await responder(
+    comoUsuario(token), limpiarComando(texto), identidad.rol);
   return { texto: texto_respuesta, resultado: 'respondido', usuario: identidad.nombre };
 }
