@@ -41,7 +41,12 @@ body {
   background: var(--fondo);
   color: var(--texto);
   -webkit-text-size-adjust: 100%;
-  /* Sitio para la barra inferior y el área segura del iPhone. */
+}
+
+/* Sitio para la barra inferior y el área segura del iPhone, solo donde esa
+   barra existe. El formulario público de pedidos no la lleva, y sin esto le
+   quedaba un hueco muerto al final. */
+body:has(nav.inferior) {
   padding-bottom: calc(68px + env(safe-area-inset-bottom));
 }
 
@@ -77,9 +82,11 @@ nav.inferior {
   z-index: 10;
 }
 nav.inferior a {
-  padding: .6rem .2rem .7rem;
+  padding: .6rem .1rem .7rem;
   text-align: center; text-decoration: none;
-  color: var(--suave); font-size: .72rem; line-height: 1.5;
+  color: var(--suave); font-size: .68rem; line-height: 1.5;
+  /* Con seis secciones en un móvil estrecho el texto no puede partirse. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 nav.inferior a.activo { color: var(--marca); font-weight: 600; }
 nav.inferior .icono { display: block; font-size: 1.2rem; }

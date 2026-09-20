@@ -40,6 +40,7 @@ export function Cabecera({ nombre, rol }: { nombre: string; rol: Rol }) {
 
 const SECCIONES = [
   { href: '/escanear', icono: '📷', texto: 'Escanear', minimo: 'OPERARIO' },
+  { href: '/pedidos', icono: '📋', texto: 'Pedidos', minimo: 'OPERARIO' },
   { href: '/stock', icono: '📦', texto: 'Stock', minimo: 'OPERARIO' },
   { href: '/tueste', icono: '🔥', texto: 'Tueste', minimo: 'OPERARIO' },
   { href: '/etiquetas', icono: '🏷️', texto: 'Etiquetas', minimo: 'OPERARIO' },

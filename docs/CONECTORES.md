@@ -195,6 +195,75 @@ cuánto se expone a la web sin arriesgar lo que va cargado en la furgoneta.
 
 ---
 
+## Hostelería · pedidos por enlace
+
+**No necesita ninguna clave.** Ni token de Meta, ni aprobación, ni coste por
+conversación.
+
+### Por qué un formulario y no la Cloud API de WhatsApp
+
+Se plantearon las dos. Gana el formulario por tres razones, y la tercera es la
+que decide:
+
+1. No hay coste por conversación ni aprobación de Meta que esperar.
+2. El cliente no instala nada: abre un enlace y pide.
+3. **No hay que interpretar lenguaje natural**, que es justo donde se
+   equivocaría. «Ponme 3 de la mezcla» no dice el formato. «Lo de siempre» no
+   dice nada. Un desplegable no tiene ese problema, y un pedido mal entendido
+   cuesta un viaje en furgoneta.
+
+La Cloud API compensaría a partir de varios cientos de pedidos al mes. Por
+debajo de eso es matar moscas a cañonazos.
+
+### Cómo se pone en marcha
+
+1. La ficha del cliente tiene que ser de tipo **Hostelería** y con su
+   descuento habitual puesto.
+2. **Ajustes → Enlaces de hostelería → Generar enlace**.
+3. **Mandar por WhatsApp**: abre la conversación con el mensaje ya escrito.
+   El cliente guarda el enlace y pide cuando quiera.
+
+### Qué pasa cuando piden
+
+El pedido entra con el stock **reservado**, igual que uno de la web: apartado
+pero sin salir del libro. Aparece en la pantalla **Pedidos**, y al marcarlo
+como servido es cuando se descuenta.
+
+Si piden más de lo que hay, el pedido entra igual y se abre una incidencia.
+Es lo correcto: el café se tuesta al pedido, y negarse solo perdería el
+encargo. El formulario marca esos artículos como «se tuesta al pedido», sin
+impedir pedirlos.
+
+### Sobre la seguridad del enlace
+
+**El enlace es la credencial.** Quien lo tenga puede pedir en nombre de ese
+cliente. Por eso:
+
+- Son 32 caracteres al azar: no se adivinan probando.
+- Se revocan **de uno en uno**, sin afectar a los demás clientes, y el viejo
+  deja de funcionar al momento.
+- Un enlace revocado y uno inventado dan **la misma respuesta**, para no
+  decirle a nadie cuál de las dos cosas es.
+- **El precio lo pone el servidor**, nunca el formulario. Si alguien manipula
+  lo que se envía, se ignora.
+- Hay un tope de pedidos por hora y enlace. No es tanto contra un ataque como
+  contra el doble clic y el «no sé si se ha enviado» que lo manda tres veces.
+
+Lo que un enlace filtrado permitiría es encargar café a nombre de ese cliente,
+que se detecta al preparar el pedido. No da acceso a ningún dato del negocio:
+el formulario solo devuelve el catálogo con el precio de ese cliente.
+
+### Lo que esto NO hace
+
+- **No cobra.** El pedido se factura como siempre, fuera de la app.
+- **No confirma la entrega.** El cliente ve «te avisamos», y el aviso se manda
+  a mano por WhatsApp.
+- **No guarda un historial para el cliente.** No hay cuenta ni contraseña: es
+  deliberado, porque mantener contraseñas de veinte bares es peor que no
+  tenerlas.
+
+---
+
 ## Conciliación
 
 **Ajustes → Conciliación** reúne todo lo que el sistema no ha sabido resolver

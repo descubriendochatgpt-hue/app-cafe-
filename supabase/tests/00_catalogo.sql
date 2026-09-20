@@ -31,3 +31,9 @@ insert into mapeo_articulos (canal, codigo_externo, sku, descripcion_externa) va
   ('loyverse', 'LV-1001', 'ETHYIR-250-GR', 'Yirgacheffe 250g'),
   ('loyverse', 'LV-1002', 'COLHUI-250-GR', 'Huila 250g')
 on conflict do nothing;
+
+-- Un cliente de hostelería, para el flujo de pedidos por enlace.
+insert into clientes (cliente_id, nombre, tipo, nif, email, descuento_pct) values
+  ('cccccccc-0000-4000-8000-000000000001', 'Cafetería La Plaza', 'Hostelería',
+   'B33000000', 'pedidos@laplaza.es', 10)
+on conflict do nothing;

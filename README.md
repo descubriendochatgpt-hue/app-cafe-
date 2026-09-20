@@ -4,9 +4,10 @@ Maestro único de inventario y pedidos multicanal para un tostador de café de
 especialidad: importación de verde → tueste → empaquetado → cuatro canales de
 venta.
 
-> **Estado: fases 1 a 4 terminadas.** Núcleo de inventario, aplicación de
-> almacén con etiquetas, migración desde las hojas y los conectores de
-> Loyverse y WooCommerce. Falta hostelería (fase 5).
+> **Estado: las cinco fases terminadas.** Núcleo de inventario, aplicación de
+> almacén con etiquetas, migración desde las hojas y los cuatro canales:
+> Loyverse, WooCommerce, depósito de El Corte Inglés (manual, como se acordó)
+> y hostelería por enlace.
 
 ## La idea
 
@@ -77,6 +78,7 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | La migración no pierde ni inventa stock | Se importa un export de ejemplo y se compara con la propia hoja |
 | El conector no duplica ni pierde ventas | Reenvíos ignorados, reintentos con espera, devolución al lote original |
 | Reservar compromete sin descontar | Un pedido web reserva, servir descuenta, cancelar devuelve |
+| Un enlace de pedido no se puede usar para otra cosa | Precio del servidor, freno a repetidos, revocación inmediata |
 
 ## Despliegue en Vercel
 
@@ -97,6 +99,7 @@ supabase/tests/             criterios de aceptación, ejecutables
 scripts/importar.mjs        migración desde las hojas (genera SQL revisable)
 src/lib/loyverse.ts         conector de TPV: firma, mapeo y proceso de recibos
 src/lib/woocommerce.ts      conector web: estados del pedido y stock de vuelta
+src/app/pedido/[token]/     formulario público de hostelería (único sin sesión)
 src/lib/ean13.ts            codificación EAN-13 (vectorial, verificada)
 src/lib/                    capa tipada sobre las funciones de dominio
 src/componentes/            escáner, estado compartido, armazón
@@ -116,6 +119,7 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 | **Escanear** | Consultar, vender, entradas, salidas, traslados e inventario. Se elige el modo una vez y se escanea seguido. |
 | **Stock** | Existencias por artículo y ubicación, con avisos de mínimo y de frescura. |
 | **Tueste** | Consume verde y produce paquetes, con la merma calculada y avisada si se sale de lo razonable. |
+| **Pedidos** | Lo pendiente de salir, de la web y de hostelería. Marcar «Servido» descuenta el stock reservado. |
 | **Etiquetas** | PDF con QR de lote para venta propia y con EAN-13 para El Corte Inglés, en rejillas A4 y rollo térmico. |
 | **Ajustes** | Estado de la cola, operaciones que necesitan una decisión, e integraciones. |
 
