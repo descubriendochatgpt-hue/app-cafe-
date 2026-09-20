@@ -10,6 +10,7 @@ const esquema = z.object({
   SUPABASE_ANON_KEY: z.string().min(20),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   SUPABASE_JWT_SECRET: z.string().min(32, 'El secreto del JWT necesita al menos 32 caracteres'),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   SESION_HORAS: z.coerce.number().int().positive().max(24 * 7).default(12),
   CRON_SECRET: z.string().min(16).optional(),
 });
@@ -26,7 +27,7 @@ export function entorno(): Entorno {
     const detalle = leido.error.issues
       .map((i) => `  · ${i.path.join('.')}: ${i.message}`)
       .join('\n');
-    throw new Error(`Configuración incompleta:\n${detalle}\n\nMira .env.example.`);
+    throw new Error(`Configuración incompleta:\n${detalle}\n\nMira integraciones.ejemplo.env.`);
   }
 
   memoria = leido.data;

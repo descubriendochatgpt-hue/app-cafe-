@@ -1,0 +1,155 @@
+/* Sistema visual mínimo. Pensado para un móvil, con una mano, en un mercado:
+   objetivos táctiles grandes, contraste alto y nada que dependa del color
+   para entenderse. */
+
+:root {
+  --marca: #35543D;
+  --marca-claro: #4a7354;
+  --fondo: #faf9f7;
+  --superficie: #ffffff;
+  --borde: #e2ded7;
+  --texto: #1d2420;
+  --suave: #6b7671;
+  --fresco: #2e7d4f;
+  --medio: #b8860b;
+  --viejo: #b3452f;
+  --error-fondo: #fdeceb;
+  --ok-fondo: #eaf5ee;
+  --radio: 10px;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --marca: #7fae8c;
+    --marca-claro: #9cc4a6;
+    --fondo: #141816;
+    --superficie: #1e2422;
+    --borde: #313a36;
+    --texto: #e8ece9;
+    --suave: #9aa8a1;
+    --error-fondo: #3a1f1c;
+    --ok-fondo: #16301f;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  -webkit-text-size-adjust: 100%;
+  /* Sitio para la barra inferior y el área segura del iPhone. */
+  padding-bottom: calc(68px + env(safe-area-inset-bottom));
+}
+
+main { padding: 1rem; max-width: 46rem; margin: 0 auto; }
+h1 { font-size: 1.35rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }
+p.sub { color: var(--suave); margin: 0 0 1.25rem; font-size: .9rem; }
+
+/* ── Cabecera ── */
+header.barra {
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+  padding: .7rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+  position: sticky; top: 0; z-index: 10;
+}
+header.barra .titulo { font-weight: 600; flex: 1; }
+
+/* ── Indicador de conexión y cola ── */
+.estado { display: flex; align-items: center; gap: .4rem; font-size: .8rem; color: var(--suave); }
+.punto { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.punto.on { background: var(--fresco); }
+.punto.off { background: var(--viejo); }
+.punto.cola { background: var(--medio); }
+
+/* ── Navegación inferior ── */
+nav.inferior {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: grid; grid-auto-flow: column;
+  background: var(--superficie);
+  border-top: 1px solid var(--borde);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+nav.inferior a {
+  padding: .6rem .2rem .7rem;
+  text-align: center; text-decoration: none;
+  color: var(--suave); font-size: .72rem; line-height: 1.5;
+}
+nav.inferior a.activo { color: var(--marca); font-weight: 600; }
+nav.inferior .icono { display: block; font-size: 1.2rem; }
+
+/* ── Tarjetas y listas ── */
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: .9rem;
+  margin-bottom: .75rem;
+}
+.fila { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+.fila + .fila { margin-top: .4rem; }
+.mono { font-family: var(--mono); font-size: .8rem; }
+.suave { color: var(--suave); font-size: .85rem; }
+
+/* ── Formularios ── */
+label { display: block; margin-bottom: .75rem; font-size: .88rem; font-weight: 500; }
+input, select, textarea {
+  width: 100%; margin-top: .3rem; padding: .65rem .7rem;
+  font: inherit; font-weight: 400;
+  border: 1px solid var(--borde); border-radius: 8px;
+  background: var(--superficie); color: var(--texto);
+}
+input:focus, select:focus { outline: 2px solid var(--marca); outline-offset: 1px; }
+
+button {
+  font: inherit; font-weight: 600; cursor: pointer;
+  padding: .75rem 1.1rem; border-radius: 8px;
+  border: 1px solid transparent; background: var(--marca); color: #fff;
+  min-height: 44px;  /* objetivo táctil cómodo */
+}
+button:disabled { opacity: .5; cursor: default; }
+button.secundario { background: transparent; color: var(--texto); border-color: var(--borde); }
+button.peligro { background: var(--viejo); }
+button.ancho { width: 100%; }
+
+.chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+.chips button {
+  padding: .45rem .8rem; font-size: .85rem; min-height: 38px;
+  background: var(--superficie); color: var(--texto); border-color: var(--borde);
+}
+.chips button.on { background: var(--marca); color: #fff; border-color: var(--marca); }
+
+/* ── Avisos ── */
+.aviso { padding: .7rem .85rem; border-radius: 8px; font-size: .88rem; margin-bottom: .85rem; }
+.aviso.error { background: var(--error-fondo); color: var(--viejo); }
+.aviso.ok { background: var(--ok-fondo); color: var(--fresco); }
+.aviso.info { background: var(--superficie); border: 1px solid var(--borde); color: var(--suave); }
+
+/* ── Frescura ── */
+.etiqueta { font-size: .72rem; padding: .12rem .45rem; border-radius: 999px; font-weight: 600; }
+.etiqueta.FRESCO { background: var(--ok-fondo); color: var(--fresco); }
+.etiqueta.AVISO { background: #fdf3e0; color: var(--medio); }
+.etiqueta.CRITICO { background: var(--error-fondo); color: var(--viejo); }
+.etiqueta.SIN_FECHA { background: var(--fondo); color: var(--suave); }
+
+/* ── Escáner ── */
+.visor { position: relative; border-radius: var(--radio); overflow: hidden; background: #000; }
+.visor video { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; }
+.visor .mira {
+  position: absolute; inset: 18% 12%;
+  border: 3px solid rgba(255,255,255,.85); border-radius: 12px;
+  pointer-events: none;
+}
+.visor.leido .mira { border-color: var(--fresco); }
+.visor.fallo .mira { border-color: var(--viejo); }
+
+table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+th, td { text-align: left; padding: .45rem .3rem; border-bottom: 1px solid var(--borde); }
+th { color: var(--suave); font-weight: 600; font-size: .8rem; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }

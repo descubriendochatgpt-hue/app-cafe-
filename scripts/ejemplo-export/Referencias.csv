@@ -1,0 +1,5 @@
+ref_id,sku,formato_id,ean13,precio_venta,coste_unitario,stock_minimo,stock_optimo,activo
+ETHYIR-F1,ETHYIR,F1,8412345000010,12.5,6.2,12,40,SI
+ETHYIR-F3,ETHYIR,F3,,42,21,4,12,SI
+COLHUI-F1,COLHUI,F1,,11,5.4,12,40,SI
+MEZCLA-F1,MEZCLA,F1,841234500ABC,9.5,4.3,20,60,SI

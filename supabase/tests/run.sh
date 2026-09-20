@@ -25,9 +25,9 @@ for t in tests/02_idempotencia.sql tests/05_deposito.sql; do
   fi
 done
 
-for t in tests/03_reproducibilidad.sh tests/04_concurrencia.sh; do
+for t in tests/03_reproducibilidad.sh tests/04_concurrencia.sh tests/06_importacion.sh; do
   if out=$("./$t" 2>&1); then
-    echo "$out" | grep -oE "(REPRODUCIBILIDAD|PROYECCIÓN|RECÁLCULO|CONCURRENCIA) ✓.*" | sed 's/^/  /'
+    echo "$out" | grep -oE "(REPRODUCIBILIDAD|PROYECCIÓN|RECÁLCULO|CONCURRENCIA|IMPORTACIÓN) ✓.*" | sed 's/^/  /'
   else
     echo "  ✗ $t"; echo "$out" | tail -12 | sed 's/^/     /'; FALLOS=1
   fi

@@ -1,0 +1,3 @@
+cliente_id,nombre,tipo,nif,email,telefono,direccion,cp,poblacion,provincia,pais,descuento_pct,alta,activo,notas
+CLI-0001,Cafetería La Plaza,Hostelería,B33000000,pedidos@laplaza.es,600000000,C/ Mayor 1,33201,Gijón,Asturias,España,5,2026-02-01,SI,
+CLI-0002,Venta mostrador,Particular,,,,,,,,España,0,,SI,Cliente genérico
