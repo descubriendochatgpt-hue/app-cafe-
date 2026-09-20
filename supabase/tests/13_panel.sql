@@ -72,6 +72,18 @@ begin
     errores := errores + 1;
   end if;
 
+  -- Y cada fecha es un DÍA, no un instante. generate_series sobre fechas
+  -- devuelve timestamp, así que sin el corte a ::date la serie salía como
+  -- «2026-08-21T00:00:00+00:00»: quien la lee espera un día y se encuentra
+  -- una hora y un huso pegados detrás.
+  if exists (select 1 from jsonb_array_elements(p -> 'por_dia') as x
+              where x ->> 'fecha' !~ '^\d{4}-\d{2}-\d{2}$') then
+    raise warning 'FALLO: la serie trae fechas con hora, p. ej. %',
+      (select x ->> 'fecha' from jsonb_array_elements(p -> 'por_dia') as x
+        where x ->> 'fecha' !~ '^\d{4}-\d{2}-\d{2}$' limit 1);
+    errores := errores + 1;
+  end if;
+
   select coalesce(sum((x ->> 'total')::numeric), 0)
     into suma
     from jsonb_array_elements(p -> 'por_dia') as x;

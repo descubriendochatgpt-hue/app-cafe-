@@ -41,6 +41,20 @@ const GRANOS: Record<Grano, string> = {
   dia: 'por día', semana: 'por semana', mes: 'por mes',
 };
 
+/**
+ * Una fecha del servidor, en un Date.
+ *
+ * Se queda con los diez primeros caracteres a propósito. Un «día» puede
+ * llegar como «2026-08-21» o como «2026-08-21T00:00:00+00:00» según cómo lo
+ * serialice quien lo manda, y concatenarle la hora al segundo daba una fecha
+ * inválida que tiraba la pantalla entera al formatearla. Un gráfico que no
+ * sabe leer un dato se queda sin esa barra; no se lleva el panel por delante.
+ */
+function comoFecha(iso: string): Date | null {
+  const d = new Date(`${String(iso).slice(0, 10)}T00:00:00Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function lunes(f: Date): Date {
   const d = new Date(f);
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
@@ -50,19 +64,21 @@ function lunes(f: Date): Date {
 function agrupar(dias: Dia[], grano: Grano, valorDe: (d: Dia) => number): Cubo[] {
   const cubos = new Map<string, Cubo>();
   for (const d of dias) {
-    const f = new Date(`${d.fecha}T00:00:00Z`);
+    const f = comoFecha(d.fecha);
+    if (!f) continue;
+    const dia = f.toISOString().slice(0, 10);
     const clave = grano === 'dia'
-      ? d.fecha
+      ? dia
       : grano === 'semana'
         ? lunes(f).toISOString().slice(0, 10)
-        : `${d.fecha.slice(0, 7)}-01`;
+        : `${dia.slice(0, 7)}-01`;
     const previo = cubos.get(clave);
     if (previo) {
       previo.valor += valorDe(d);
       previo.pedidos += d.pedidos;
-      previo.hasta = d.fecha;
+      previo.hasta = dia;
     } else {
-      cubos.set(clave, { desde: clave, hasta: d.fecha, valor: valorDe(d), pedidos: d.pedidos });
+      cubos.set(clave, { desde: clave, hasta: dia, valor: valorDe(d), pedidos: d.pedidos });
     }
   }
   return [...cubos.values()];
@@ -70,7 +86,8 @@ function agrupar(dias: Dia[], grano: Grano, valorDe: (d: Dia) => number): Cubo[]
 
 /** Último día que cae dentro de un tramo. Sirve para saber si está entero. */
 function finDeTramo(desde: string, grano: Grano): string {
-  const d = new Date(`${desde}T00:00:00Z`);
+  const d = comoFecha(desde);
+  if (!d) return desde;
   if (grano === 'mes') { d.setUTCMonth(d.getUTCMonth() + 1); d.setUTCDate(0); }
   else if (grano === 'semana') { d.setUTCDate(d.getUTCDate() + 6); }
   return d.toISOString().slice(0, 10);
@@ -138,19 +155,21 @@ export function GraficoDiario({ dias, moneda, formato }: {
   const variosAnos = primero.desde.slice(0, 4) !== ultimo.desde.slice(0, 4);
 
   const fecha = (iso: string, largo = false) => {
+    const d = comoFecha(iso);
+    if (!d) return '';
     const como: Intl.DateTimeFormatOptions = { timeZone: 'UTC', month: largo ? 'long' : 'short' };
     if (grano !== 'mes') como.day = 'numeric';
     if (largo) como.year = 'numeric';
     else if (variosAnos) como.year = '2-digit';
-    return new Date(`${iso}T00:00:00Z`).toLocaleDateString('es-ES', como);
+    return d.toLocaleDateString('es-ES', como);
   };
 
   // Al agrupar, el primer y el último tramo casi nunca están enteros: un año
   // por meses empieza a mitad de septiembre y acaba a mitad de septiembre. Si
   // se dibujaran como los demás, se leerían como dos meses flojos. Van
   // rayados, y el pie lo dice con palabras.
-  const primerDia = dias[0]?.fecha ?? '';
-  const ultimoDia = dias[dias.length - 1]?.fecha ?? '';
+  const primerDia = String(dias[0]?.fecha ?? '').slice(0, 10);
+  const ultimoDia = String(dias[dias.length - 1]?.fecha ?? '').slice(0, 10);
   const esParcial = (c: Cubo, i: number) => grano !== 'dia' && (
     (i === 0 && c.desde < primerDia) ||
     (i === cubos.length - 1 && finDeTramo(c.desde, grano) > ultimoDia));

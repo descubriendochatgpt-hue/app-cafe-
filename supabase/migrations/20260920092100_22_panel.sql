@@ -88,10 +88,14 @@ begin
 
   /* ── Por día, para ver la forma del periodo ── */
   select coalesce(jsonb_agg(jsonb_build_object(
-           'fecha', d.dia, 'pedidos', coalesce(x.n, 0),
+           'fecha', d.dia::date, 'pedidos', coalesce(x.n, 0),
            'unidades', coalesce(x.uds, 0),
            'total', case when v_dinero then coalesce(x.total, 0) end) order by d.dia), '[]'::jsonb)
     into v_por_dia
+    -- ::date, no `d.dia` a secas. generate_series sobre fechas devuelve
+    -- TIMESTAMP, y sin el corte la serie sale como «2026-08-21T00:00:00+00:00»
+    -- en vez de «2026-08-21». Quien la lee se encuentra una fecha con hora
+    -- donde esperaba un día.
     from generate_series(v_desde, current_date, interval '1 day') as d(dia)
     left join (
       -- Agrupado por fecha y solo por fecha. Agrupar además por pedido daría
