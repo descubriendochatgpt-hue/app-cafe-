@@ -35,6 +35,15 @@ export async function acceder(usuarioId: string, pin: string): Promise<Sesion | 
   return { usuarioId: fila.usuario_id, nombre: fila.nombre, rol: fila.rol };
 }
 
+/** Segundos que quedan de bloqueo, o 0 si no lo hay. */
+export async function esperaDeAcceso(usuarioId: string): Promise<number> {
+  const { data, error } = await comoAnonimo().rpc('espera_de_acceso', {
+    p_usuario_id: usuarioId,
+  });
+  if (error) return 0;
+  return typeof data === 'number' ? data : 0;
+}
+
 export async function sesionActual(): Promise<Sesion | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   return token ? leerToken(token, entorno().SUPABASE_JWT_SECRET) : null;

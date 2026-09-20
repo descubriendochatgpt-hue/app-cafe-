@@ -19,7 +19,9 @@ Lee [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) para el diseño completo,
 [`docs/adr/0001-decisiones.md`](docs/adr/0001-decisiones.md) para por qué es
 así y no de otra manera, [`docs/MIGRACION.md`](docs/MIGRACION.md) para pasar
 desde las hojas sin parar la operativa, y
-[`docs/CONECTORES.md`](docs/CONECTORES.md) para conectar los canales.
+[`docs/CONECTORES.md`](docs/CONECTORES.md) para conectar los canales y
+[`docs/REVISION-SEGURIDAD.md`](docs/REVISION-SEGURIDAD.md) para lo que se
+revisó antes de poner datos reales.
 
 ## Configuración: un único fichero
 
@@ -79,6 +81,7 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | El conector no duplica ni pierde ventas | Reenvíos ignorados, reintentos con espera, devolución al lote original |
 | Reservar compromete sin descontar | Un pedido web reserva, servir descuenta, cancelar devuelve |
 | Un enlace de pedido no se puede usar para otra cosa | Precio del servidor, freno a repetidos, revocación inmediata |
+| El PIN aguanta la fuerza bruta | Bloqueo creciente, y durante el bloqueo ni el PIN correcto abre |
 
 ## Despliegue en Vercel
 
@@ -126,4 +129,9 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 ## Primer acceso
 
 La semilla crea un administrador con **PIN 1234**. Cambiarlo antes de usar la
-app con datos reales.
+app con datos reales, y dar de alta a cada persona con su propio usuario: los
+movimientos quedan firmados con quien los hizo, y eso solo sirve si no
+comparten cuenta.
+
+Tras varios intentos fallidos el acceso se bloquea un rato, y el bloqueo crece
+con cada tanda. Un administrador puede desbloquearlo.

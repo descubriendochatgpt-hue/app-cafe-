@@ -17,9 +17,9 @@ q -f tests/01_historia.sql 2>&1 | grep -E "NOTICE" | sed 's/^psql.*NOTICE:  /  /
 
 echo
 echo "════ criterios de aceptación ════"
-for t in tests/02_idempotencia.sql tests/05_deposito.sql tests/07_loyverse.sql tests/08_pedidos_canal.sql tests/09_hosteleria.sql; do
+for t in tests/02_idempotencia.sql tests/05_deposito.sql tests/07_loyverse.sql tests/08_pedidos_canal.sql tests/09_hosteleria.sql tests/10_seguridad.sql; do
   if out=$(q -f "$t" 2>&1); then
-    echo "$out" | grep -oE "(IDEMPOTENCIA|DEPÓSITO|CONECTOR|PEDIDOS DE CANAL|HOSTELERÍA) ✓.*" | sed 's/^/  /'
+    echo "$out" | grep -oE "(IDEMPOTENCIA|DEPÓSITO|CONECTOR|PEDIDOS DE CANAL|HOSTELERÍA|SEGURIDAD) ✓.*" | sed 's/^/  /'
   else
     echo "  ✗ $t"; echo "$out" | grep -E "WARNING|ERROR" | sed 's/^/     /'; FALLOS=1
   fi

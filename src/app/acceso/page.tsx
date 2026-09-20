@@ -7,7 +7,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Usuario { usuario_id: string; nombre: string; rol: string }
+// La lista pública ya no dice quién es administrador: saber a quién
+// atacar le ahorraba la mitad del trabajo a quien prueba PIN.
+interface Usuario { usuario_id: string; nombre: string }
 
 export default function Acceso() {
   const router = useRouter();

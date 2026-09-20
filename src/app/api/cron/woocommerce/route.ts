@@ -82,10 +82,12 @@ export async function GET(peticion: Request) {
 
     // La marca de lo publicado solo se actualiza si la tienda lo aceptó. Si
     // falló, la próxima vuelta lo reintenta en vez de darlo por hecho.
-    const { error } = await db.from('stock_publicado').upsert(
-      nuevos.map((n) => ({ canal: 'woocommerce', ...n, publicado_en: new Date().toISOString() })),
-      { onConflict: 'canal,sku' },
-    );
+    // Se anota por función: la tabla no admite escritura directa, igual que
+    // el resto de las que sostienen el inventario.
+    const { error } = await db.rpc('anotar_stock_publicado', {
+      p_canal: 'woocommerce',
+      p_filas: nuevos,
+    });
     if (error) throw new Error(`Publicado en la tienda pero no anotado: ${error.message}`);
 
     return NextResponse.json({ ok: true, cambios: enviados, detalle: nuevos });

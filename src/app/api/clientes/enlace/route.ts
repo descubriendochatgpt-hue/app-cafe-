@@ -15,18 +15,20 @@ export async function GET() {
     return NextResponse.json({ error: 'Se necesita perfil de gestor.' }, { status: 403 });
   }
 
+  // La credencial del enlace no se lee de la tabla: `clientes.token_pedido`
+  // no tiene permiso de lectura ni para un operario. Sale por esta función,
+  // que exige perfil de gestor.
   const db = comoUsuario(token);
-  const { data, error } = await db
-    .from('clientes')
-    .select('cliente_id, nombre, tipo, telefono, descuento_pct, token_pedido, token_creado_en')
-    .eq('activo', true)
-    .order('nombre');
+  const { data, error } = await db.rpc('clientes_con_enlace');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({
     base: baseUrl(),
-    clientes: (data ?? []).map((c) => ({
+    clientes: ((data ?? []) as {
+      cliente_id: string; nombre: string; tipo: string; telefono: string | null;
+      descuento_pct: number; token_creado_en: string | null; token_pedido: string | null;
+    }[]).map((c) => ({
       ...c,
       // El token completo no hace falta en el listado; el enlace sí.
       enlace: c.token_pedido ? `${baseUrl()}/pedido/${c.token_pedido}` : null,
