@@ -1,0 +1,29 @@
+{
+  "name": "cafe-inventario",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Maestro único de inventario y pedidos multicanal para tostador de café de especialidad",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:rebuild": "./supabase/rebuild.sh",
+    "db:test": "./supabase/tests/run.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "jose": "^5.9.6",
+    "next": "^15.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@types/react": "^18.3.12",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}

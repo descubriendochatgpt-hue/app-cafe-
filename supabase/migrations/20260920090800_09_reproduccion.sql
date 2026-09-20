@@ -1,0 +1,163 @@
+-- ═══════════════════════════════════════════════════════════════════════════
+--  09 · REPRODUCCIÓN DEL HISTÓRICO
+--
+--  Vuelve a ejecutar una lista de operaciones sobre una base limpia llamando
+--  a las MISMAS funciones de dominio que las registraron la primera vez.
+--
+--  No es solo un test: es la herramienta de recuperación. Si algún día hay
+--  que reconstruir el inventario, se reproduce el histórico y tiene que salir
+--  exactamente el mismo stock, lote a lote y ubicación a ubicación.
+--
+--  Las ventas NO guardan qué lote consumieron. Es deliberado: al reproducirlas
+--  se vuelven a resolver con la política de la ubicación, y si el resultado
+--  coincide es que la asignación es determinista de verdad.
+-- ═══════════════════════════════════════════════════════════════════════════
+
+create or replace function app.reproducir(p_operaciones jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  o            jsonb;
+  v_datos      jsonb;
+  v_tipo       tipo_operacion;
+  v_id         uuid;
+  v_usuario    uuid;
+  v_cuando     timestamptz;
+  v_hechas     int := 0;
+  v_omitidas   int := 0;
+begin
+  if not app.tiene_nivel('ADMIN') then
+    raise exception 'Reproducir el histórico es una operación de administrador.'
+      using errcode = 'insufficient_privilege';
+  end if;
+
+  for o in select value from jsonb_array_elements(p_operaciones)
+  loop
+    v_id      := (o ->> 'operacion_id')::uuid;
+    v_tipo    := (o ->> 'tipo')::tipo_operacion;
+    v_usuario := nullif(o ->> 'usuario_id', '')::uuid;
+    v_cuando  := (o ->> 'ocurrido_en')::timestamptz;
+    v_datos   := coalesce(o -> 'datos', '{}'::jsonb);
+
+    case v_tipo
+      when 'RECEPCION_VERDE' then
+        perform registrar_recepcion_verde(
+          p_operacion_id    => v_id,
+          p_sku             => v_datos ->> 'sku',
+          p_cantidad_kg     => (v_datos ->> 'cantidad_kg')::numeric,
+          p_ubicacion_id    => v_datos ->> 'ubicacion_id',
+          p_proveedor       => v_datos ->> 'proveedor',
+          p_fecha_recepcion => nullif(v_datos ->> 'fecha_recepcion', '')::date,
+          p_precio_kg       => nullif(v_datos ->> 'precio_kg', '')::numeric,
+          p_usuario_id      => v_usuario,
+          p_ocurrido_en     => v_cuando,
+          p_lote_id         => v_datos ->> 'lote_id',
+          p_nota            => o ->> 'nota');
+
+      when 'TUESTE' then
+        perform registrar_tueste(
+          p_operacion_id => v_id,
+          p_consumos     => v_datos -> 'consumos',
+          p_producciones => v_datos -> 'producciones',
+          p_ubicacion_id => v_datos ->> 'ubicacion_id',
+          p_usuario_id   => v_usuario,
+          p_ocurrido_en  => v_cuando,
+          p_nota         => o ->> 'nota');
+
+      when 'TRASLADO' then
+        perform registrar_traslado(
+          p_operacion_id      => v_id,
+          p_lote_id           => v_datos ->> 'lote_id',
+          p_origen_ubicacion  => v_datos ->> 'de',
+          p_destino_ubicacion => v_datos ->> 'a',
+          p_cantidad          => (v_datos ->> 'cantidad')::numeric,
+          p_usuario_id        => v_usuario,
+          p_ocurrido_en       => v_cuando,
+          p_nota              => o ->> 'nota');
+
+      when 'VENTA' then
+        -- Las ventas servidas desde reservas se reproducen con su pedido,
+        -- no por esta vía.
+        if v_datos ->> 'desde' = 'reservas' then
+          v_omitidas := v_omitidas + 1;
+        else
+          perform registrar_venta(
+            p_operacion_id => v_id,
+            p_ubicacion_id => v_datos ->> 'ubicacion_id',
+            p_lineas       => v_datos -> 'lineas',
+            p_canal        => coalesce(v_datos ->> 'canal', 'Mostrador'),
+            p_cliente_id   => nullif(v_datos ->> 'cliente_id', '')::uuid,
+            p_origen       => coalesce(o ->> 'origen', 'app'),
+            p_origen_id    => o ->> 'origen_id',
+            p_documento_fiscal         => v_datos ->> 'documento_fiscal',
+            p_documento_fiscal_sistema => v_datos ->> 'documento_fiscal_sistema',
+            p_forma_pago   => v_datos ->> 'forma_pago',
+            p_usuario_id   => v_usuario,
+            p_ocurrido_en  => v_cuando,
+            p_nota         => o ->> 'nota');
+        end if;
+
+      when 'ENTRADA', 'SALIDA', 'MERMA', 'DEVOLUCION' then
+        perform registrar_movimiento(
+          p_operacion_id => v_id,
+          p_tipo         => v_tipo,
+          p_lote_id      => v_datos ->> 'lote_id',
+          p_ubicacion_id => v_datos ->> 'ubicacion',
+          p_cantidad     => (v_datos ->> 'cantidad')::numeric,
+          p_usuario_id   => v_usuario,
+          p_ocurrido_en  => v_cuando,
+          p_nota         => o ->> 'nota');
+
+      when 'AJUSTE' then
+        perform registrar_ajuste_inventario(
+          p_operacion_id => v_id,
+          p_ubicacion_id => v_datos ->> 'ubicacion',
+          p_recuento     => v_datos -> 'recuento',
+          p_usuario_id   => v_usuario,
+          p_ocurrido_en  => v_cuando,
+          p_nota         => o ->> 'nota');
+
+      else
+        -- RESERVA y LIBERACION no tocan `cantidad`, solo la parte comprometida.
+        v_omitidas := v_omitidas + 1;
+        continue;
+    end case;
+
+    v_hechas := v_hechas + 1;
+  end loop;
+
+  return jsonb_build_object('reproducidas', v_hechas, 'omitidas', v_omitidas);
+end;
+$$;
+
+comment on function app.reproducir(jsonb) is
+  'Reejecuta el histórico llamando a las funciones de dominio reales. '
+  'Con el mismo catálogo de partida debe producir el mismo stock final.';
+
+-- Exporta el histórico en el orden en que ocurrió, listo para reproducir.
+create or replace function app.exportar_historico()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select coalesce(jsonb_agg(x order by x_ocurrido, x_registrado), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'operacion_id', operacion_id,
+               'tipo',         tipo,
+               'origen',       origen,
+               'origen_id',    origen_id,
+               'usuario_id',   usuario_id,
+               'ocurrido_en',  ocurrido_en,
+               'datos',        datos,
+               'nota',         nota) as x,
+             ocurrido_en   as x_ocurrido,
+             registrado_en as x_registrado
+        from operaciones
+    ) z;
+$$;
