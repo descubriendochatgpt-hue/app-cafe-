@@ -45,6 +45,20 @@ export async function leerToken(token: string, secreto: string): Promise<Sesion 
   }
 }
 
+/**
+ * Token para los conectores automáticos. Lleva rol SISTEMA, que en la base
+ * está por encima de ADMIN, y no lleva `sub`: detrás de un webhook no hay
+ * ninguna persona, y las operaciones que genere quedan con usuario nulo a
+ * propósito, para que se distingan de lo que hizo alguien.
+ */
+export async function firmarSistema(secreto: string, horas = 1): Promise<string> {
+  return new SignJWT({ rol: 'SISTEMA', nombre: 'sistema', role: 'authenticated' })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setIssuedAt()
+    .setExpirationTime(`${horas}h`)
+    .sign(clave(secreto));
+}
+
 /** Jerarquía de permisos. Tiene que coincidir con app.nivel() en Postgres. */
 const NIVEL: Record<Actor, number> = {
   OPERARIO: 1, GESTOR: 2, ADMIN: 3, SISTEMA: 4,

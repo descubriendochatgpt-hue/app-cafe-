@@ -2,5 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "regions": ["cdg1"],
-  "crons": []
+  "crons": [
+    { "path": "/api/cron/loyverse", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/eventos", "schedule": "*/10 * * * *" }
+  ]
 }

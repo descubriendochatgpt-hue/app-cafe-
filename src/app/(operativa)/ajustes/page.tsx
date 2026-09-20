@@ -68,7 +68,9 @@ export default function Ajustes() {
 
       <h2>Configuración</h2>
       <div className="tarjeta">
-        <Link href="/ajustes/integraciones">Integraciones y webhooks →</Link>
+        <div className="fila"><Link href="/ajustes/conciliacion">Conciliación →</Link></div>
+        <div className="fila"><Link href="/ajustes/integraciones">Integraciones y webhooks →</Link></div>
+        <div className="fila"><Link href="/ajustes/loyverse">Artículos de Loyverse →</Link></div>
       </div>
 
       <button className="secundario ancho" style={{ marginTop: '1.5rem' }} onClick={() => void salir()}>

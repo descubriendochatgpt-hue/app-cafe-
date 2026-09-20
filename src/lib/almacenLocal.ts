@@ -36,6 +36,7 @@ export interface Catalogo {
   articulos: Articulo[];
   formatos: Formato[];
   precios: Precio[];
+  parametros: Record<string, string>;
   descargado: string;
 }
 

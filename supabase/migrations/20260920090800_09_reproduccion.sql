@@ -10,7 +10,13 @@
 --
 --  Las ventas NO guardan qué lote consumieron. Es deliberado: al reproducirlas
 --  se vuelven a resolver con la política de la ubicación, y si el resultado
---  coincide es que la asignación es determinista de verdad.
+--  coincide es que la asignación es determinista de verdad. Lo mismo vale
+--  para las devoluciones, que buscan los lotes de la venta que devuelven:
+--  al reproducir en orden, esa venta ya está puesta.
+--
+--  `registrar_devolucion` se define más adelante (migración 14). PL/pgSQL
+--  resuelve las llamadas al ejecutar, no al crear, así que el orden de los
+--  ficheros no importa mientras todas se apliquen.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 create or replace function app.reproducir(p_operaciones jsonb)
@@ -100,7 +106,36 @@ begin
             p_nota         => o ->> 'nota');
         end if;
 
-      when 'ENTRADA', 'SALIDA', 'MERMA', 'DEVOLUCION' then
+      when 'DEVOLUCION' then
+        -- Hay dos formas de devolución y no se reproducen igual:
+        --   · la de un canal (un reembolso en el TPV) llega con líneas por
+        --     SKU y tiene que volver a los lotes de la venta original;
+        --   · la manual es un movimiento suelto sobre un lote concreto.
+        -- Se distinguen por la carga, no por el tipo.
+        if v_datos ? 'lineas' then
+          perform registrar_devolucion(
+            p_operacion_id    => v_id,
+            p_ubicacion_id    => v_datos ->> 'ubicacion_id',
+            p_lineas          => v_datos -> 'lineas',
+            p_venta_origen_id => v_datos ->> 'venta_origen_id',
+            p_origen          => coalesce(o ->> 'origen', 'app'),
+            p_origen_id       => o ->> 'origen_id',
+            p_usuario_id      => v_usuario,
+            p_ocurrido_en     => v_cuando,
+            p_nota            => o ->> 'nota');
+        else
+          perform registrar_movimiento(
+            p_operacion_id => v_id,
+            p_tipo         => v_tipo,
+            p_lote_id      => v_datos ->> 'lote_id',
+            p_ubicacion_id => v_datos ->> 'ubicacion',
+            p_cantidad     => (v_datos ->> 'cantidad')::numeric,
+            p_usuario_id   => v_usuario,
+            p_ocurrido_en  => v_cuando,
+            p_nota         => o ->> 'nota');
+        end if;
+
+      when 'ENTRADA', 'SALIDA', 'MERMA' then
         perform registrar_movimiento(
           p_operacion_id => v_id,
           p_tipo         => v_tipo,

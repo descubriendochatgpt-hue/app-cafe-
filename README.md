@@ -4,10 +4,10 @@ Maestro único de inventario y pedidos multicanal para un tostador de café de
 especialidad: importación de verde → tueste → empaquetado → cuatro canales de
 venta.
 
-> **Estado: fases 1 y 2 terminadas.** El núcleo de inventario y la aplicación
-> de almacén están operativos y verificados, con la migración desde las hojas
-> lista y probada. Los conectores de canal son la fase 3 en adelante: el
-> fichero de integraciones ya está preparado para ellos.
+> **Estado: fases 1, 2 y 3 terminadas.** Núcleo de inventario, aplicación de
+> almacén con etiquetas, migración desde las hojas y conector de Loyverse.
+> Falta WooCommerce (fase 4) y hostelería (fase 5); sus ranuras ya están en el
+> fichero de integraciones.
 
 ## La idea
 
@@ -17,8 +17,9 @@ puede ver exactamente qué pasó, cuándo y quién lo hizo.
 
 Lee [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) para el diseño completo,
 [`docs/adr/0001-decisiones.md`](docs/adr/0001-decisiones.md) para por qué es
-así y no de otra manera, y [`docs/MIGRACION.md`](docs/MIGRACION.md) para pasar
-desde las hojas sin parar la operativa.
+así y no de otra manera, [`docs/MIGRACION.md`](docs/MIGRACION.md) para pasar
+desde las hojas sin parar la operativa, y
+[`docs/CONECTORES.md`](docs/CONECTORES.md) para conectar los canales.
 
 ## Configuración: un único fichero
 
@@ -75,6 +76,7 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | Dos ventas simultáneas no dan stock negativo | 50 ventas en paralelo del único paquete que queda |
 | El depósito cuadra | servido − vendido − devuelto = saldo, con descuadre cero |
 | La migración no pierde ni inventa stock | Se importa un export de ejemplo y se compara con la propia hoja |
+| El conector no duplica ni pierde ventas | Reenvíos ignorados, reintentos con espera, devolución al lote original |
 
 ## Despliegue en Vercel
 
@@ -93,6 +95,8 @@ integraciones.ejemplo.env   el único fichero que hay que rellenar
 supabase/migrations/        esquema, funciones de dominio y políticas RLS
 supabase/tests/             criterios de aceptación, ejecutables
 scripts/importar.mjs        migración desde las hojas (genera SQL revisable)
+src/lib/loyverse.ts         conector: firma, mapeo y proceso de recibos
+src/lib/ean13.ts            codificación EAN-13 (vectorial, verificada)
 src/lib/                    capa tipada sobre las funciones de dominio
 src/componentes/            escáner, estado compartido, armazón
 src/app/(operativa)/        pantallas: escanear, stock, tueste, ajustes
@@ -111,6 +115,7 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 | **Escanear** | Consultar, vender, entradas, salidas, traslados e inventario. Se elige el modo una vez y se escanea seguido. |
 | **Stock** | Existencias por artículo y ubicación, con avisos de mínimo y de frescura. |
 | **Tueste** | Consume verde y produce paquetes, con la merma calculada y avisada si se sale de lo razonable. |
+| **Etiquetas** | PDF con QR de lote para venta propia y con EAN-13 para El Corte Inglés, en rejillas A4 y rollo térmico. |
 | **Ajustes** | Estado de la cola, operaciones que necesitan una decisión, e integraciones. |
 
 ## Primer acceso

@@ -17,15 +17,16 @@ export async function GET() {
   }
 
   const db = comoUsuario(token);
-  const [lotes, saldos, ubicaciones, articulos, formatos] = await Promise.all([
+  const [lotes, saldos, ubicaciones, articulos, formatos, parametros] = await Promise.all([
     db.from('v_lote_detalle').select('*'),
     db.from('v_saldo_detalle').select('*'),
     db.from('ubicaciones').select('*').eq('activo', true).order('nombre'),
     db.from('articulos').select('sku, clase, cafe_id, formato_id, unidad, ean13').eq('activo', true),
     db.from('formatos').select('*').eq('activo', true),
+    db.from('parametros').select('clave, valor'),
   ]);
 
-  const fallo = [lotes, saldos, ubicaciones, articulos, formatos].find((r) => r.error);
+  const fallo = [lotes, saldos, ubicaciones, articulos, formatos, parametros].find((r) => r.error);
   if (fallo?.error) {
     return NextResponse.json({ error: fallo.error.message }, { status: 500 });
   }
@@ -42,6 +43,7 @@ export async function GET() {
     ubicaciones: ubicaciones.data ?? [],
     articulos: articulos.data ?? [],
     formatos: formatos.data ?? [],
+    parametros: Object.fromEntries((parametros.data ?? []).map((p) => [p.clave, p.valor])),
     precios: precios.data ?? [],
     usuario: sesion,
     descargado: new Date().toISOString(),

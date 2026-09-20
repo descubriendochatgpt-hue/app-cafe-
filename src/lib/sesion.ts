@@ -7,7 +7,7 @@
  * solo acredita quién eres.
  */
 import { cookies } from 'next/headers';
-import { comoSistema } from './supabase';
+import { comoAnonimo } from './supabase';
 import { entorno } from './entorno';
 import { firmarToken, leerToken, esRol } from './jwt';
 import type { Sesion } from './tipos';
@@ -23,7 +23,7 @@ export function firmar(sesion: Sesion): Promise<string> {
 
 /** Comprueba el PIN contra la base. No distingue usuario inexistente de PIN malo. */
 export async function acceder(usuarioId: string, pin: string): Promise<Sesion | null> {
-  const { data, error } = await comoSistema().rpc('acceder', {
+  const { data, error } = await comoAnonimo().rpc('acceder', {
     p_usuario_id: usuarioId,
     p_pin: pin,
   });

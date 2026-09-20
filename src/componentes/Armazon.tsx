@@ -42,6 +42,7 @@ const SECCIONES = [
   { href: '/escanear', icono: '📷', texto: 'Escanear', minimo: 'OPERARIO' },
   { href: '/stock', icono: '📦', texto: 'Stock', minimo: 'OPERARIO' },
   { href: '/tueste', icono: '🔥', texto: 'Tueste', minimo: 'OPERARIO' },
+  { href: '/etiquetas', icono: '🏷️', texto: 'Etiquetas', minimo: 'OPERARIO' },
   { href: '/ajustes', icono: '⚙️', texto: 'Ajustes', minimo: 'OPERARIO' },
 ] as const;
 
