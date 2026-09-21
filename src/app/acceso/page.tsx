@@ -18,16 +18,28 @@ export default function Acceso() {
   const [pin, setPin] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [entrando, setEntrando] = useState(false);
+  const [cargandoLista, setCargandoLista] = useState(true);
 
   useEffect(() => {
     void (async () => {
       try {
         const r = await fetch('/api/auth/usuarios');
+        // Distinguir «no pude cargar la lista» de «no hay nadie dado de alta»
+        // importa más de lo que parece: las dos se veían como un desplegable
+        // vacío, y quien acaba de montar el sistema se queda mirando una
+        // pantalla que no le dice qué ha hecho mal.
+        if (!r.ok) {
+          setError('No se pudo cargar la lista de usuarios. Revisa las claves de '
+                 + 'Supabase en el servidor; el detalle está en el registro.');
+          return;
+        }
         const d = (await r.json()) as { usuarios?: Usuario[] };
         setUsuarios(d.usuarios ?? []);
         if (d.usuarios?.length === 1) setUsuarioId(d.usuarios[0]!.usuario_id);
       } catch {
-        setError('No se pudo conectar. Comprueba la configuración de Supabase.');
+        setError('No se pudo conectar con el servidor.');
+      } finally {
+        setCargandoLista(false);
       }
     })();
   }, []);
@@ -64,11 +76,23 @@ export default function Acceso() {
 
       {error && <div className="aviso error">{error}</div>}
 
+      {!cargandoLista && !error && usuarios.length === 0 && (
+        <div className="aviso info">
+          La base responde, pero no hay ningún usuario activo. La semilla crea un
+          «Administrador»: si no aparece, es que el esquema se aplicó a medias.
+        </div>
+      )}
+
       <form onSubmit={entrar}>
         <label>
           Quién eres
           <select value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)} required>
-            <option value="">Elige…</option>
+            <option value="">
+              {cargandoLista ? 'Cargando…'
+                : error ? '—'
+                : usuarios.length === 0 ? 'No hay nadie dado de alta'
+                : 'Elige…'}
+            </option>
             {usuarios.map((u) => (
               <option key={u.usuario_id} value={u.usuario_id}>{u.nombre}</option>
             ))}
