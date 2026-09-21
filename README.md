@@ -93,6 +93,19 @@ La suite de base de datos comprueba, ejecutándolo de verdad:
 | El operario no ve un solo importe | No es que la pantalla los oculte: la respuesta no los trae |
 | El aviso diario no se manda dos veces | La fecha es clave primaria; si el proveedor falla, se suelta y se reintenta |
 
+## Tareas programadas
+
+El plan gratuito de Vercel permite **una sola tarea al día**, así que lo que
+se despliega es `/api/cron/diario`, que hace las cuatro cosas en una pasada.
+
+Eso tiene una consecuencia que conviene entender: con una pasada diaria, los
+crones dejan de ser el camino por el que entran las ventas y pasan a ser solo
+la red de seguridad. El camino son los webhooks, que son inmediatos y
+gratuitos. **Con plan gratuito, los webhooks no son opcionales.**
+
+Está todo en [`docs/CRONES.md`](docs/CRONES.md), incluido el bloque que hay
+que poner si algún día se pasa al plan de pago.
+
 ## Despliegue en Vercel
 
 1. Importar el repositorio. El framework se detecta solo.

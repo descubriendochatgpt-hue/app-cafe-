@@ -3,9 +3,6 @@
   "framework": "nextjs",
   "regions": ["cdg1"],
   "crons": [
-    { "path": "/api/cron/loyverse", "schedule": "*/5 * * * *" },
-    { "path": "/api/cron/eventos", "schedule": "*/10 * * * *" },
-    { "path": "/api/cron/woocommerce", "schedule": "*/15 * * * *" },
-    { "path": "/api/cron/avisos", "schedule": "0 5 * * *" }
+    { "path": "/api/cron/diario", "schedule": "0 5 * * *" }
   ]
 }

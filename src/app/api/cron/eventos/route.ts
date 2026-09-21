@@ -49,8 +49,20 @@ export async function GET(peticion: Request) {
   // Los descuadres entre el libro y la proyección no deberían existir nunca.
   // Comprobarlo cuesta una consulta y es la diferencia entre enterarse hoy o
   // enterarse cuando alguien nota que el stock no cuadra.
-  const { data: descuadres } = await db.rpc('verificar_saldos_publico');
-  resultado.descuadres = Array.isArray(descuadres) ? descuadres.length : 0;
+  // Ojo con el cero aquí: «no hay descuadres» y «no se pudo comprobar» no son
+  // lo mismo, y confundirlos convierte esta red de seguridad en un adorno que
+  // siempre dice que todo va bien.
+  const { data: descuadres, error: falloComprobacion } =
+    await db.rpc('verificar_saldos_publico');
+
+  if (falloComprobacion || !Array.isArray(descuadres)) {
+    resultado.descuadres = {
+      comprobado: false,
+      motivo: falloComprobacion?.message ?? 'respuesta inesperada',
+    };
+  } else {
+    resultado.descuadres = { comprobado: true, cuantos: descuadres.length };
+  }
 
   return NextResponse.json({ ok: true, ...resultado });
 }
