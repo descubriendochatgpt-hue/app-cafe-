@@ -6,7 +6,7 @@
  * Un caché de respuestas aquí solo serviría para enseñar stock viejo como si
  * fuera bueno.
  */
-const VERSION = 'cafe-v1';
+const VERSION = 'cafe-v2';
 const ARMAZON = ['/', '/escanear', '/stock', '/tueste', '/ajustes', '/manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
@@ -25,6 +25,24 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+/**
+ * Qué merece guardarse.
+ *
+ * Solo las respuestas BUENAS. Guardar un 404 o un 502 parece inofensivo
+ * mientras hay cobertura —la red manda y se ve lo correcto— y deja de serlo
+ * en cuanto se va: entonces se sirve lo guardado, y lo guardado es la página
+ * de error que se coló un día que el servidor estaba a medio desplegar.
+ *
+ * Esta aplicación se usa en un mercado, sin cobertura, con las manos
+ * ocupadas. Que ahí aparezca un «404» en vez del escáner es exactamente el
+ * fallo que no nos podemos permitir.
+ *
+ * Las respuestas redirigidas tampoco: la caché no las admite y `put` lanza.
+ */
+function guardable(r) {
+  return r.ok && !r.redirected && r.type === 'basic';
+}
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
@@ -37,8 +55,10 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     fetch(e.request)
       .then((r) => {
-        const copia = r.clone();
-        caches.open(VERSION).then((c) => c.put(e.request, copia)).catch(() => undefined);
+        if (guardable(r)) {
+          const copia = r.clone();
+          caches.open(VERSION).then((c) => c.put(e.request, copia)).catch(() => undefined);
+        }
         return r;
       })
       .catch(() => caches.match(e.request).then((r) => r || caches.match('/escanear'))),
