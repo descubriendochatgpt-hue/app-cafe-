@@ -9,13 +9,14 @@
  * casi siempre significa que alguien se ha equivocado tecleando.
  */
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/componentes/Estado';
 import { RecepcionVerde } from '@/componentes/RecepcionVerde';
 import { registrar } from '@/lib/sincronizacion';
 import { nuevaOperacionId, ahora } from '@/lib/uuid';
 
 export default function Tueste() {
-  const { catalogo, subir } = useApp();
+  const { catalogo, cargando, subir } = useApp();
   const [pestana, setPestana] = useState<'tostar' | 'verde'>('tostar');
   const [loteVerde, setLoteVerde] = useState('');
   const [kg, setKg] = useState('');
@@ -106,6 +107,26 @@ export default function Tueste() {
       {pestana === 'tostar' && <>
       {mensaje && <div className={`aviso ${mensaje.tipo}`}>{mensaje.texto}</div>}
 
+      {/* Un desplegable vacío no dice qué falta. Para tostar hacen falta dos
+          cosas —un saco de verde en el almacén y una referencia de paquete a
+          la que echar lo tostado—, y cada una se consigue en un sitio
+          distinto. Decirlo aquí ahorra el paseo. */}
+      {!cargando && paquetes.length === 0 && (
+        <div className="aviso info">
+          No hay ninguna referencia de paquete dada de alta. Se crean en{' '}
+          <Link href="/ajustes/catalogo">Ajustes → Catálogo</Link>: primero el
+          café y el formato, y después el <strong>artículo</strong>, que es el
+          que une los dos y es el que sale aquí.
+        </div>
+      )}
+
+      {!cargando && paquetes.length > 0 && verdes.length === 0 && (
+        <div className="aviso info">
+          No hay café verde en el almacén. Regístralo en la pestaña{' '}
+          <strong>Recibir verde</strong> antes de tostar.
+        </div>
+      )}
+
       <form onSubmit={(e) => void guardar(e)}>
         <label>
           Saco de café verde
@@ -135,12 +156,18 @@ export default function Tueste() {
         <label>
           Qué se ha producido
           <select value={sku} onChange={(e) => setSku(e.target.value)} required>
-            <option value="">Elige…</option>
+            <option value="">
+              {paquetes.length === 0 ? 'No hay referencias dadas de alta' : 'Elige…'}
+            </option>
             {paquetes.map((a) => {
               const formato = catalogo?.formatos.find((f) => f.formato_id === a.formato_id);
+              // El nombre del café, no su clave. Quien tuesta conoce «Kenia
+              // AA», no «KENYAA». La clave queda de reserva por si el café se
+              // borró y el artículo sigue apuntando a él.
+              const cafe = catalogo?.cafes?.find((c) => c.cafe_id === a.cafe_id);
               return (
                 <option key={a.sku} value={a.sku}>
-                  {a.cafe_id} · {formato?.nombre ?? a.sku}
+                  {cafe?.nombre ?? a.cafe_id} · {formato?.nombre ?? a.sku}
                 </option>
               );
             })}

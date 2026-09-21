@@ -12,6 +12,7 @@
  * validación duplicada en el cliente acaba divergiendo de la de verdad.
  */
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useApp } from './Estado';
 
 export interface Campo {
   nombre: string;
@@ -52,6 +53,7 @@ export function Editor({
   const [error, setError] = useState<string | null>(null);
   const [campoMal, setCampoMal] = useState<Record<string, string>>({});
   const [busca, setBusca] = useState('');
+  const { refrescar } = useApp();
 
   const cargar = useCallback(async () => {
     const r = await fetch(`/api/admin/${recurso}`);
@@ -93,6 +95,16 @@ export function Editor({
       }
       setEditando(null);
       await cargar();
+
+      // Y refrescar el catálogo compartido, no solo esta tabla.
+      //
+      // El resto de pantallas —Tueste, Escanear, Etiquetas— no consultan la
+      // base cada vez: leen la copia local que permite trabajar sin cobertura
+      // en un mercado. Esa copia se refresca sola cada minuto, así que sin
+      // esto una referencia recién creada tarda en aparecer, y quien la acaba
+      // de dar de alta en esta misma pantalla se queda pensando que no se ha
+      // guardado. Dar de alta algo y no verlo es peor que esperar un segundo.
+      await refrescar();
     } finally {
       setGuardando(false);
     }

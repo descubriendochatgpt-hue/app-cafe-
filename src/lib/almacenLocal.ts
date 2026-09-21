@@ -35,9 +35,14 @@ export interface Catalogo {
   ubicaciones: Ubicacion[];
   articulos: Articulo[];
   formatos: Formato[];
+  cafes: Cafe[];
   precios: Precio[];
   parametros: Record<string, string>;
   descargado: string;
+}
+
+export interface Cafe {
+  cafe_id: string; nombre: string; origen: string | null;
 }
 
 export interface LoteDetalle {

@@ -17,16 +17,20 @@ export async function GET() {
   }
 
   const db = comoUsuario(token);
-  const [lotes, saldos, ubicaciones, articulos, formatos, parametros] = await Promise.all([
+  const [lotes, saldos, ubicaciones, articulos, formatos, cafes, parametros] = await Promise.all([
     db.from('v_lote_detalle').select('*'),
     db.from('v_saldo_detalle').select('*'),
     db.from('ubicaciones').select('*').eq('activo', true).order('nombre'),
     db.from('articulos').select('sku, clase, cafe_id, formato_id, unidad, ean13').eq('activo', true),
     db.from('formatos').select('*').eq('activo', true),
+    // Los cafés van con su nombre: sin esto, las pantallas solo podían
+    // enseñar el código —«KENYAA · 250 g»— y quien tuesta conoce el café por
+    // su nombre, no por la clave con la que lo dimos de alta.
+    db.from('cafes').select('cafe_id, nombre, origen').eq('activo', true).order('nombre'),
     db.from('parametros').select('clave, valor'),
   ]);
 
-  const fallo = [lotes, saldos, ubicaciones, articulos, formatos, parametros].find((r) => r.error);
+  const fallo = [lotes, saldos, ubicaciones, articulos, formatos, cafes, parametros].find((r) => r.error);
   if (fallo?.error) {
     return NextResponse.json({ error: fallo.error.message }, { status: 500 });
   }
@@ -43,6 +47,7 @@ export async function GET() {
     ubicaciones: ubicaciones.data ?? [],
     articulos: articulos.data ?? [],
     formatos: formatos.data ?? [],
+    cafes: cafes.data ?? [],
     parametros: Object.fromEntries((parametros.data ?? []).map((p) => [p.clave, p.valor])),
     precios: precios.data ?? [],
     usuario: sesion,

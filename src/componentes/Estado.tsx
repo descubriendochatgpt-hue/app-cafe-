@@ -62,7 +62,16 @@ export function ProveedorEstado({ children }: { children: ReactNode }) {
   }, []);
 
   const subir = useCallback(async () => {
-    await sincronizar();
+    // Subir la cola y refrescar el catálogo son dos cosas independientes, y
+    // antes iban atadas: si subir fallaba —una venta rechazada, un corte a
+    // mitad—, la excepción se llevaba por delante el refresco, y el catálogo
+    // se quedaba congelado hasta recargar la página. Justo al revés de lo que
+    // conviene: cuando algo va mal es cuando más falta hace ver el dato bueno.
+    try {
+      await sincronizar();
+    } catch {
+      // Lo que no suba se queda en la cola y se reintenta solo.
+    }
     await contarCola();
     await refrescar();
   }, [contarCola, refrescar]);
