@@ -27,6 +27,21 @@ export const dynamic = 'force-dynamic';
 function donde(codigo: string | undefined, mensaje: string): {
   estado: string; significa: string; arreglo: string;
 } {
+  // Lo primero que se mira, porque es el error de configuración más común:
+  // si vuelve HTML, la dirección no apunta a la API. La API de Supabase
+  // responde JSON siempre, incluso cuando se equivoca.
+  if (/^\s*<!doctype|^\s*<html/i.test(mensaje) || /<!doctype html/i.test(mensaje.slice(0, 200))) {
+    return {
+      estado: 'no_es_la_api',
+      significa: 'La dirección contestó con una página web, no con la API. '
+               + 'La API de Supabase siempre responde JSON, nunca HTML.',
+      arreglo: 'NEXT_PUBLIC_SUPABASE_URL tiene que ser https://xxxxx.supabase.co '
+             + '—la de Project Settings → API → Project URL—, no la del panel '
+             + '(supabase.com/dashboard/...) ni con nada detrás. Si ya es esa, '
+             + 'comprueba que el proyecto no esté pausado.',
+    };
+  }
+
   if (codigo === 'PGRST202' || /could not find the function|schema cache/i.test(mensaje)) {
     return {
       estado: 'funcion_desconocida',
