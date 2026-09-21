@@ -178,6 +178,22 @@ después al servidor; el indicador de la cabecera dice cuánto queda por subir.
 | **Informes** | Depósito con su cuadre, lotes que envejecen y trazabilidad hasta el saco de origen. |
 | **Ajustes** | Estado de la cola, operaciones que necesitan una decisión, e integraciones. |
 
+## Cuando algo no arranca
+
+`/api/salud` dice en una línea dónde está el problema: si falta o no vale
+alguna variable de entorno, si no se llega a Supabase, si la clave se
+rechaza, si falta el esquema o si la base está vacía. Cada respuesta trae el
+arreglo concreto.
+
+Usa la **misma validación que la aplicación**, no una parecida: una
+comprobación que mire cosas distintas acabaría diciendo que todo va bien
+mientras la aplicación se cae.
+
+Se abre sin identificarse —si hiciera falta entrar, no serviría justo cuando
+no se puede entrar—, y por eso no devuelve ningún valor: ni claves, ni
+fragmentos, ni el mensaje crudo de la base, que describiría el esquema. Solo
+qué variable falla y en cuál de los cuatro sitios está el problema.
+
 ## Primer acceso
 
 La semilla crea un administrador con **PIN 1234**. Cambiarlo antes de usar la

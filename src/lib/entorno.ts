@@ -19,6 +19,30 @@ export type Entorno = z.infer<typeof esquema>;
 
 let memoria: Entorno | null = null;
 
+/**
+ * Lo mismo que `entorno()`, pero contando qué falla en vez de reventar.
+ *
+ * Lo usa el diagnóstico de `/api/salud`. Tiene que salir de ESTE esquema y no
+ * de una lista paralela: una comprobación que mire cosas distintas de las que
+ * mira la aplicación acaba diciendo que todo está bien mientras la aplicación
+ * se cae, que es peor que no tener comprobación.
+ */
+export function revisarEntorno():
+  | { ok: true }
+  | { ok: false; problemas: { campo: string; mensaje: string }[] } {
+  const leido = esquema.safeParse(process.env);
+  if (leido.success) return { ok: true };
+
+  // El camino y el mensaje, nunca el valor: esto se lee sin identificarse.
+  return {
+    ok: false,
+    problemas: leido.error.issues.map((i) => ({
+      campo: i.path.join('.') || '(desconocido)',
+      mensaje: i.message,
+    })),
+  };
+}
+
 export function entorno(): Entorno {
   if (memoria) return memoria;
 
