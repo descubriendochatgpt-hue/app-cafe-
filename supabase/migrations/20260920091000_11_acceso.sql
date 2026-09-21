@@ -27,7 +27,7 @@ returns table (usuario_id uuid, nombre text, rol rol_usuario)
 language plpgsql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = public, extensions, pg_temp
 as $$
 begin
   if p_pin !~ '^[0-9]{4,8}$' then

@@ -64,7 +64,8 @@ returns table (usuario_id uuid, nombre text, rol rol_usuario)
 language plpgsql
 volatile                       -- ahora escribe: lleva la cuenta de los fallos
 security definer
-set search_path = public, pg_temp
+-- `extensions` porque ahí vive pgcrypto en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
 declare
   v_bloqueado timestamptz;

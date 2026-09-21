@@ -26,6 +26,8 @@ create or replace function app.hash_pin(p_pin text)
 returns text
 language sql
 volatile
+-- `extensions` porque ahí vive pgcrypto en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
   select crypt(p_pin, gen_salt('bf', 10));
 $$;
@@ -35,7 +37,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = public, extensions, pg_temp
 as $$
   select exists (
     select 1 from usuarios

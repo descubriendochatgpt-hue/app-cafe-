@@ -47,7 +47,9 @@ returns text
 language plpgsql
 volatile
 security definer
-set search_path = public, pg_temp
+-- `extensions` porque gen_random_bytes también es de pgcrypto, y ahí es donde
+-- vive en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
 declare
   v_token text;

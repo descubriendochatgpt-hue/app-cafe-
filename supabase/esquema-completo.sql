@@ -18,7 +18,48 @@
 --  Extensiones, esquema de utilidades, tipos del dominio y contexto de sesión.
 -- ═══════════════════════════════════════════════════════════════════════════
 
-create extension if not exists pgcrypto;
+/* ─────────────────────── pgcrypto, y dónde vive ───────────────────────
+   El PIN se guarda con bcrypt, que lo pone pgcrypto. Dónde acaba instalada
+   esa extensión NO es igual en todas partes:
+
+     · en un Postgres limpio cae en `public`;
+     · en Supabase ya viene puesta, y vive en `extensions`.
+
+   Y eso importa porque las funciones que comprueban el PIN son SECURITY
+   DEFINER y fijan su `search_path` —tienen que hacerlo: si no lo fijaran,
+   quien las llama podría anteponer un esquema con su propio `crypt()` y
+   hacer que cualquier PIN valga—. Al fijarlo, si el esquema donde está
+   pgcrypto no aparece en esa lista, `crypt` sencillamente no existe para
+   ellas. En Supabase eso salía como «function crypt(text, text) does not
+   exist» doscientas líneas más abajo, que no dice nada de la causa.
+
+   Por eso se nombra `extensions` explícitamente en el search_path de esas
+   funciones, y por eso aquí se asegura que el esquema existe.             */
+
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+create extension if not exists pgcrypto with schema extensions;
+
+-- Si alguien la instaló en un tercer sitio, más vale decirlo aquí y con
+-- nombre y apellidos que dejar que falle luego donde no se entiende.
+do $$
+declare v_esquema text;
+begin
+  select n.nspname into v_esquema
+    from pg_extension e join pg_namespace n on n.oid = e.extnamespace
+   where e.extname = 'pgcrypto';
+
+  if v_esquema is null then
+    raise exception 'No se pudo instalar pgcrypto, y sin ella no hay PIN que valga.';
+  end if;
+
+  if v_esquema not in ('public', 'extensions') then
+    raise exception
+      'pgcrypto está instalada en el esquema «%», y las funciones del PIN solo '
+      'miran en «public» y «extensions». Muévela con: ALTER EXTENSION pgcrypto '
+      'SET SCHEMA extensions;', v_esquema;
+  end if;
+end $$;
 
 -- Supabase ya trae estos roles. En un Postgres limpio (tests locales, CI) no,
 -- así que se crean solo si faltan: la misma migración vale en los dos sitios.
@@ -197,6 +238,8 @@ create or replace function app.hash_pin(p_pin text)
 returns text
 language sql
 volatile
+-- `extensions` porque ahí vive pgcrypto en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
   select crypt(p_pin, gen_salt('bf', 10));
 $$;
@@ -206,7 +249,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = public, extensions, pg_temp
 as $$
   select exists (
     select 1 from usuarios
@@ -2565,7 +2608,7 @@ returns table (usuario_id uuid, nombre text, rol rol_usuario)
 language plpgsql
 stable
 security definer
-set search_path = public, pg_temp
+set search_path = public, extensions, pg_temp
 as $$
 begin
   if p_pin !~ '^[0-9]{4,8}$' then
@@ -3517,7 +3560,9 @@ returns text
 language plpgsql
 volatile
 security definer
-set search_path = public, pg_temp
+-- `extensions` porque gen_random_bytes también es de pgcrypto, y ahí es donde
+-- vive en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
 declare
   v_token text;
@@ -3785,7 +3830,8 @@ returns table (usuario_id uuid, nombre text, rol rol_usuario)
 language plpgsql
 volatile                       -- ahora escribe: lleva la cuenta de los fallos
 security definer
-set search_path = public, pg_temp
+-- `extensions` porque ahí vive pgcrypto en Supabase. Ver migración 01.
+set search_path = public, extensions, pg_temp
 as $$
 declare
   v_bloqueado timestamptz;

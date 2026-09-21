@@ -181,3 +181,52 @@ begin
 
   raise notice 'SEGURIDAD ✓  las vistas respetan RLS, salvo las dos excepciones documentadas';
 end $$;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+--  Las funciones del PIN tienen que ver pgcrypto desde su search_path fijado.
+--
+--  Fijar el search_path en una función SECURITY DEFINER es obligatorio: sin
+--  eso, quien la llama puede anteponer un esquema con su propio `crypt()` y
+--  hacer que valga cualquier PIN. Pero al fijarlo hay que acordarse de incluir
+--  el esquema donde vive pgcrypto, que NO es el mismo en todas partes: en un
+--  Postgres limpio es `public` y en Supabase es `extensions`.
+--
+--  Olvidarlo no rompe nada aquí —en local `crypt` cae en public— y rompe el
+--  despliegue entero allí, con un error que no menciona la causa. De ahí esta
+--  comprobación: es de las que solo sirven para el sitio donde no se prueba.
+-- ═══════════════════════════════════════════════════════════════════════════
+do $$
+declare
+  f        record;
+  faltan   text := '';
+  errores  int := 0;
+begin
+  for f in
+    select n.nspname || '.' || p.proname as nombre,
+           array_to_string(p.proconfig, ' ') as ajustes
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname in ('public', 'app')
+       -- prokind 'f': solo funciones normales. A un agregado no se le puede
+       -- pedir la definición, y la consulta se caía ahí antes de comprobar nada.
+       and p.prokind = 'f'
+       and pg_get_functiondef(p.oid) ~
+           '\m(crypt|gen_salt|gen_random_bytes|digest|hmac|encrypt|decrypt|pgp_\w+)\s*\('
+  loop
+    -- O no fija search_path (y entonces hereda el de quien llama), o lo fija
+    -- nombrando el esquema donde puede estar pgcrypto.
+    if f.ajustes is not null
+       and f.ajustes ~ 'search_path'
+       and f.ajustes !~ '\mextensions\M' then
+      faltan := faltan || ' ' || f.nombre;
+      errores := errores + 1;
+    end if;
+  end loop;
+
+  if errores > 0 then
+    raise warning 'FALLO: estas funciones usan pgcrypto y no lo verían en Supabase:%', faltan;
+    raise exception 'SEGURIDAD (pgcrypto): % función(es) con el search_path corto', errores;
+  end if;
+
+  raise notice 'SEGURIDAD ✓  las funciones que usan pgcrypto la encuentran esté donde esté';
+end $$;
