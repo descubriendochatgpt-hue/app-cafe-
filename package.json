@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:rebuild": "./supabase/rebuild.sh",
-    "db:test": "./supabase/tests/run.sh"
+    "db:test": "./supabase/tests/run.sh",
+    "db:esquema": "./supabase/generar-esquema.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

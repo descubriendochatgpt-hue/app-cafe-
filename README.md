@@ -61,6 +61,11 @@ npm run db:test       # suite de criterios de aceptación
 
 Con el CLI de Supabase, `supabase db push` aplica las mismas migraciones.
 
+**Sin instalar nada**, `supabase/esquema-completo.sql` es todo el esquema en un
+único fichero para pegar en *SQL Editor → Run*. Lo genera `npm run db:esquema`
+a partir de las mismas migraciones, así que no hay dos versiones del esquema
+que puedan separarse; si se añade una migración, hay que regenerarlo.
+
 ## Verificación
 
 ```bash
