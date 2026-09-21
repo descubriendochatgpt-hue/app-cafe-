@@ -142,3 +142,42 @@ begin
 end $$;
 
 reset role;
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+--  Las vistas no se saltan RLS, salvo las dos que lo hacen a propósito.
+--
+--  Una vista corre con los permisos de quien la creó mientras no se le diga
+--  lo contrario, y entonces las políticas de las tablas de debajo dejan de
+--  evaluarse sin que nada lo avise. Esta prueba existe para que añadir una
+--  vista nueva y olvidarse de `security_invoker` falle aquí y no en Supabase.
+-- ═══════════════════════════════════════════════════════════════════════════
+do $$
+declare
+  v        record;
+  sueltas  text := '';
+  errores  int := 0;
+begin
+  for v in
+    select c.relname,
+           coalesce((select option_value from pg_options_to_table(c.reloptions)
+                      where option_name = 'security_invoker'), 'off') as invoker
+      from pg_class c join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind = 'v'
+       -- Las dos excepciones deliberadas: son la ventana sin importes que se
+       -- le deja al operario sobre una tabla cerrada a GESTOR.
+       and c.relname not in ('pedidos_operativo', 'pedido_lineas_operativo')
+  loop
+    if v.invoker <> 'true' then
+      sueltas := sueltas || ' ' || v.relname;
+      errores := errores + 1;
+    end if;
+  end loop;
+
+  if errores > 0 then
+    raise warning 'FALLO: estas vistas se saltan RLS sin motivo:%', sueltas;
+    raise exception 'SEGURIDAD (vistas): % vista(s) sin security_invoker', errores;
+  end if;
+
+  raise notice 'SEGURIDAD ✓  las vistas respetan RLS, salvo las dos excepciones documentadas';
+end $$;
